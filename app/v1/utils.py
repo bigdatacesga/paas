@@ -6,13 +6,10 @@ import requests
 
 # Create a global kvstore client
 ENDPOINT = 'http://consul:8500/v1/kv'
-# ENDPOINT = 'http://10.112.0.101:8500/v1/kv'
 client = kv.Client(ENDPOINT)
 
-# NETWORKS_ENDPOINT = 'http://10.112.0.105:5000/resources/networks/v1/networks'
-# NETWORKS_ENDPOINT = 'http://127.0.0.1:5006/resources/networks/v1/networks'
 NETWORKS_ENDPOINT = 'http://networks.service.int.cesga.es:5000/resources/networks/v1/networks'
-
+#NETWORKS_ENDPOINT = 'http://10.112.13.1:5001/resources/networks/v1/networks'
 
 #############################################
 # SERVICE CHECKING AND VALIDATION FUNCTIONS #

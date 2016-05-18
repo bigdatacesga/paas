@@ -1,25 +1,20 @@
 import json
+import registry
+import kvstore as kv
+import requests
 
 from flask import Flask, abort
 from flask import jsonify, request
 
 from . import api
 from . import utils as ut
-
-import registry
-import kvstore as kv
 from .errors import ValidationError
-import requests
 
-# Create a global kvstore client
-# ENDPOINT = 'http://10.112.0.101:8500/v1/kv'
-# MESOS_FRAMEWORK_ENDPOINT = 'http://127.0.0.1:5002/mesos_framework/v1/new_instance'
 
 ENDPOINT = 'http://consul:8500/v1/kv'
-MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework.service.int.cesga.es:5000/mesos_framework/v1/new_instance'
+MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework.service.int.cesga.es:5000/bigdata/mesos_framework/v1/instance'
 TEMPLATE_ENDPOINT = 'frameworks'
 service_endp = kv.Client(ENDPOINT)
-
 app = Flask(__name__)
 
 
@@ -64,18 +59,20 @@ def get_cluster_nodes():
 @api.route('/services/', methods=['DELETE'])
 @api.route('/services', methods=['DELETE'])
 def delete_service():
-    # username = "jenes"
-    (service_type, service_name, instance_id) = ut.parse_request_parameters(request)
-
-    if any([x is None for x in [service_type, service_name, instance_id]]):
-        raise ValidationError('Params are missing')
-
-    # In this case recurse_bool will always be false
-    # recurse_bool, url = ut.create_url(username, service_type, service_name, instance_id)
-
-    # service_endp.delete(url, recursive=True)
-
-    return jsonify({'result': "fail", 'message': "method not implemented"})
+    abort(501) # Not implemented
+    #
+    # # username = "jenes"
+    # (service_type, service_name, instance_id) = ut.parse_request_parameters(request)
+    #
+    # if any([x is None for x in [service_type, service_name, instance_id]]):
+    #     raise ValidationError('Params are missing')
+    #
+    # # In this case recurse_bool will always be false
+    # # recurse_bool, url = ut.create_url(username, service_type, service_name, instance_id)
+    #
+    # # service_endp.delete(url, recursive=True)
+    #
+    # return jsonify({'result': "fail", 'message': "method not implemented"})
 
 
 @api.route('/services/', methods=['POST'])
