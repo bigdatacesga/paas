@@ -13,4 +13,4 @@ python-dateutil==2.2
 six==1.7.3
 kvstore==0.1.0
 requests
-configuration-registry==0.1.2
+configuration-registry==0.1.7

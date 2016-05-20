@@ -19,6 +19,7 @@ import logging
 #     app.run(debug=False, use_reloader=False, host='127.0.0.1', port=5000)
 
 app = create_app(os.environ.get('FLASK_CONFIG', 'testing'))
+#application = app
 
 handler = logging.StreamHandler(sys.stdout)
 #handler = logging.FileHandler('./application.log')
@@ -33,4 +34,5 @@ app.logger.handlers.extend(logging.getLogger("gunicorn.error").handlers)
 app.logger.handlers.extend(logging.getLogger("gunicorn").handlers)
 
 if __name__ == '__main__':
+    #application.run(host='127.0.0.1', port=5000)
     app.run(host='127.0.0.1', port=5000)
