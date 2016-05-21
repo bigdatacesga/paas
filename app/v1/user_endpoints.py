@@ -1,5 +1,4 @@
 import json
-import registry
 import kvstore as kv
 import requests
 
@@ -10,6 +9,8 @@ from . import api
 from . import utils as ut
 from .errors import ValidationError
 
+#import registry
+from .configuration_registry import registry
 
 ENDPOINT = 'http://consul:8500/v1/kv'
 MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework.service.int.cesga.es:5000/bigdata/mesos_framework/v1/instance'
@@ -18,43 +19,137 @@ service_endp = kv.Client(ENDPOINT)
 app = Flask(__name__)
 
 
+
 @api.route('/services', methods=['GET'])
 @api.route('/services/', methods=['GET'])
-def get_instances_by_params():
-    username = "jenes"
-
-    (service_type, service_name, instance_id) = ut.parse_request_parameters(request)
-    (recurse_bool, url) = ut.create_url(username, service_type, service_name, instance_id)
-    app.logger.info('Request for service info from ' + username + " to url: " + str(url))
-
+def get_sevices():
+    app.logger.info('Request for all services')
     try:
-        instances = service_endp.recurse(url)
-        return jsonify({'services': instances})
-            
+        services = [] # service_endp.recurse("/services")
+        return jsonify({'services': services})
+
     except kv.KeyDoesNotExist as error:
         app.logger.info('404 Error ' + error.message)
         abort(404)
 
 
-@api.route('/services/nodes/', methods=['GET'])
-def get_cluster_nodes():
-    username = "jenes"
-    (service_type, service_name, instance_id) = ut.parse_request_parameters(request)
+@api.route('/services/<service>/<version>', methods=['GET'])
+def get_sevice(service, version):
+    app.logger.info('Request for all services')
+    try:
+        registry.connect(ENDPOINT)
+        service = registry.get_service_template(service, version)
+        # FIXME Create a toString method of a Service Object
+        service_string = service.name
+        return jsonify({'services': service_string})
 
-    if any([x is None for x in [service_type, service_name, instance_id]]):
-        raise ValidationError('Params are missing')
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
 
-    # In this case recurse_bool will always be false
-    (recurse_bool, base_url) = ut.create_url(username, service_type, service_name, instance_id)
 
-    registry.connect(ENDPOINT)
-    instance = registry.get_cluster_instance(dn=base_url)
-    nodes = instance.nodes
-    node_names_list = list()
-    for node in nodes:
-        node_names_list.append(node.name)
-    return jsonify({'nodes': node_names_list})
+@api.route('/instances', methods=['GET'])
+@api.route('/instances/', methods=['GET'])
+def get_all_instances():
+    app.logger.info('Request for all instances')
+    try:
+        #instances = [] # service_endp.recurse("/instances")
+        registry.connect(ENDPOINT)
+        instances = registry.get_cluster_instances()
+        return jsonify({'services': instances})
 
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
+
+
+@api.route('/instances/<username>', methods=['GET'])
+@api.route('/instances/<username>/', methods=['GET'])
+def get_user_instances(username):
+    app.logger.info('Request for instances of user {} '.format(username))
+    try:
+        #instances = [] # service_endp.recurse("/instances/{}".format(username))
+        registry.connect(ENDPOINT)
+        instances = registry.get_cluster_instances(username)
+        return jsonify({'services': instances})
+
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
+
+@api.route('/instances/<username>/<service>', methods=['GET'])
+def get_user_service_instances(username, service):
+    app.logger.info('Request for instances of user {} and service {}'.format(username, service))
+    try:
+        #instances = [] # service_endp.recurse("/instances/{}/{}".format(username, service))
+        registry.connect(ENDPOINT)
+        instances = registry.get_cluster_instances(username, service)
+        return jsonify({'services': instances})
+
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
+
+@api.route('/instances/<username>/<service>/<version>', methods=['GET'])
+def get_user_service_version_instances(username, service, version):
+    app.logger.info('Request for instances of user {} and service {} with version {}'.format(username, service, version))
+    try:
+        #instances = [] # service_endp.recurse("/instances/{}/{}/{}".format(username, service, version))
+        registry.connect(ENDPOINT)
+        instances = registry.get_cluster_instances(username, service, version)
+        return jsonify({'services': instances})
+
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
+
+
+@api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['GET'])
+def get_instance(username, service, version, instanceid):
+    app.logger.info('Request for instance nodes of user {} and service {} with version {}'.format(username, service, version))
+    try:
+        registry.connect(ENDPOINT)
+        instance = registry.get_cluster_instance(dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
+        # FIXME Implement a 'toString' method to describe an Instance object from the endpoint
+        return jsonify({'instance': instance.service_full_name})
+
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
+
+@api.route('/instances/<username>/<service>/<version>/<instanceid>/nodes', methods=['GET'])
+def get_instance_nodes(username, service, version, instanceid):
+    app.logger.info('Request for instance nodes of user {} and service {} with version {}'.format(username, service, version))
+    try:
+        registry.connect(ENDPOINT)
+        instance = registry.get_cluster_instance(dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
+        nodes = instance.nodes
+        node_names_list = list()
+        for node in nodes:
+            # FIXME Implement a 'toString' methos to describe a node object from the endpoint
+            node_names_list.append(node.name)
+        return jsonify({'nodes': node_names_list})
+
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
+
+@api.route('/instances/<username>/<service>/<version>/<instanceid>/services', methods=['GET'])
+def get_instance_services(username, service, version, instanceid):
+    app.logger.info('Request for instance nodes of user {} and service {} with version {}'.format(username, service, version))
+    try:
+        registry.connect(ENDPOINT)
+        instance = registry.get_cluster_instance(dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
+        services = instance.services
+        service_names_list = list()
+        for service in services:
+            # FIXME Implement a 'toString' methos to describe a service object from the endpoint
+            service_names_list.append(service.name)
+        return jsonify({'services': service_names_list})
+
+    except kv.KeyDoesNotExist as error:
+        app.logger.info('404 Error ' + error.message)
+        abort(404)
 
 @api.route('/services/', methods=['DELETE'])
 @api.route('/services', methods=['DELETE'])
