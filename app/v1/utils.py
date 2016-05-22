@@ -8,27 +8,13 @@ import requests
 ENDPOINT = 'http://consul:8500/v1/kv'
 client = kv.Client(ENDPOINT)
 
-#NETWORKS_ENDPOINT = 'http://networks.service.int.cesga.es:5000/resources/networks/v1/networks'
-NETWORKS_ENDPOINT = 'http://127.0.0.1:5001/resources/networks/v1/networks'
+NETWORKS_ENDPOINT = 'http://networks.service.int.cesga.es:5000/resources/networks/v1/networks'
+#NETWORKS_ENDPOINT = 'http://127.0.0.1:5001/resources/networks/v1/networks'
 
 
 ###########################################
 # SERVICE ATTRIBUTES PARSING AND HANDLING #
 ###########################################
-
-def parse_put_template_data(request):
-    json_dict = request.get_json()
-    data = dict()
-    try:
-        #description, template, options
-        data["description"] = json_dict['description']
-        data["template"] = json_dict['template']
-        data["options"] = json_dict['options']
-
-    except KeyError:
-        raise ValidationError('Invalid data, values are missing.')
-
-    return data
 
 def parse_post_template_data(request):
     json_dict = request.get_json()
@@ -44,15 +30,10 @@ def parse_post_template_data(request):
     return data
 
 
-def set_node_info(node_dn=None, node_name=None, instance_name=None):
-    # Initialize the registry module
-    registry.connect(ENDPOINT)
-
+def set_node_info(node, node_name=None, instance_name=None):
     node_id = instance_name + "_" + node_name
-    node = registry.Node(node_dn)
     node.node_id = node_id
     node.clustername = instance_name
-    # node.node_dn = node_dn # Remove this line if not necessary in the future anymore
 
 
 def set_node_dn(node_dn):
