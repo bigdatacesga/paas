@@ -1,5 +1,6 @@
 from flask import jsonify
-from . import api
+from . import api, app
+import kvstore as kv
 
 
 class ValidationError(ValueError):
@@ -34,6 +35,15 @@ def bad_request(e):
     response = jsonify({'status': 400, 'error': 'bad request',
                         'message': e.args[0]})
     response.status_code = 400
+    return response
+
+
+@api.errorhandler(kv.KeyDoesNotExist)
+def key_does_not_exist(e):
+    app.logger.warn('404 Error ' + e.message)
+    response = jsonify({'status': 404, 'error': 'Key not found',
+                        'message': e.message})
+    response.status_code = 404
     return response
 
 

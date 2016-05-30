@@ -31,7 +31,7 @@ curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services/ -d '{"service_type":
 
 Registering services
 --------------------
-POST /services
+### POST /services
 
   {
     "name": "cdh",
@@ -39,116 +39,15 @@ POST /services
     "description": "Hadoop cluster based on Cloudera CDH 5.7.0",
   }
 
-ex:
-curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services/ -d '{"name":"cdh", "version":"1.0"}' -H "Content-type: application/json"
+curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services -d '{"name":"gluster", "version":"3.7.11", "description": "GlusterFS parallel filesystem cluster"}' -H "Content-type: application/json"
 
+### PUT /services/<name>/<version>/template
 
-PUT /services/<name>/<version>/template
+  jinja2 json template: eg. see service-template.json in configuration-registry module
 
-  data -> jinja2 json template: eg. service-template.json
-  {% set comma = joiner(",") %}
-    {
-    "nodes": {
-        "master0": {
-            "name": "master0", "clustername": "X",
-            "docker_image": "X", "docker_opts": "X",
-            "port": "X", "check_ports": [22, 80, 443], "tags": ["yarn", "master"],
-            "cpu": 1, "mem": 1024,
-            "host": "X", "id": "X", "status": "X",
-            "disks": {
-                "disk1": {
-                    "name": "disk1", "type": "ssd",
-                    "origin": "/data/1/{{ instancename }}",
-                    "destination": "/data/1", "mode": "rw"
-                }
-            },
-            "networks": {
-                "eth0": {
-                    "networkname": "admin", "device": "X", "bridge": "X",
-                    "address": "X", "gateway": "X", "netmask": "X"
-                },
-                "eth1": {
-                    "networkname": "storage", "device": "X", "bridge": "X",
-                    "address": "X", "gateway": "X", "netmask": "X"
-                }
-            },
-            "services": ["yarn", "snamenode"]
-        },
-        "master1": {
-            "name": "master1", "clustername": "X",
-            "docker_image": "X", "docker_opts": "X",
-            "port": "X", "check_ports": [22, 80, 443], "tags": ["namenode", "master"],
-            "cpu": 1, "mem": 1024,
-            "host": "X", "id": "X", "status": "X",
-            "disks": {
-                "disk1": {
-                    "name": "disk1", "type": "ssd",
-                    "origin": "/data/1/{{ instancename }}",
-                    "destination": "/data/1", "mode": "rw"
-                }
-            },
-            "networks": {
-                "eth0": {
-                    "networkname": "admin", "device": "X", "bridge": "X",
-                    "address": "X", "gateway": "X", "netmask": "X"
-                },
-                "eth1": {
-                    "networkname": "storage", "device": "X", "bridge": "X",
-                    "address": "X", "gateway": "X", "netmask": "X"
-                }
-            },
-            "services": ["namenode"]
-        },
-    {% for n in range(0, opts['slaves.number']) %}
-        {{ comma() }} "slave{{ n }}": {
-            "name": "slave{{ n }}", "clustername": "X",
-            "docker_image": "X", "docker_opts": "X",
-            "port": "X", "check_ports": [22, 4444], "tags": ["datanode", "slave"],
-            "cpu": 1, "mem": 1024,
-            "host": "X", "id": "X", "status": "X",
-            "disks": { {% set comma = joiner(",") %}{% for k in range(0, opts['slaves.disks']) %}
-                {{ comma() }} "disk{{ k }}": {
-                    "name": "disk{{ k }}", "type": "sata",
-                    "origin": "/data/{{ k }}/{{ instancename }}",
-                    "destination": "/data/{{ k }}", "mode": "rw"
-                } {% endfor %}
-            },
-            "networks": {
-                "eth0": {
-                    "networkname": "admin", "device": "X", "bridge": "X",
-                    "address": "X", "gateway": "X", "netmask": "X"
-                },
-                "eth1": {
-                    "networkname": "storage", "device": "X", "bridge": "X",
-                    "address": "X", "gateway": "X", "netmask": "X"
-                }
-            },
-            "services": ["datanode"]
-        }
-    {% endfor %}
-    },
-    "services": {
-        "yarn": {
-            "name": "yarn",
-            "status": "running",
-            "yarn.scheduler.minimum-allocation-vcores": 1,
-            "nodes": ["master0"]
-        },
-        "datanode": {
-            "name": "datanode",
-            "status": "pending",
-            "dfs.blocksize": {{ opts['dfs.blocksize'] }},
-            "nodes": [{% set comma = joiner(",") %}{% for n in range(0, opts['slaves.number']) %}{{ comma() }}"slave{{ n }}"{% endfor %}]
-        }
-    }
-    }
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/template -d@service-template.json -H "Content-type: application/json"
 
-ex:
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/cdh/1.0/template/ -d @template.txt -H "Content-type: application/text"
-
->>>>>>> 8f13b4ef6685658f4ddf77958fc11ebcf00a877b
-
-PUT /services/<name>/<version>/options
+### PUT /services/<name>/<version>/options
 
   {
     "required": {
@@ -170,12 +69,11 @@ PUT /services/<name>/<version>/options
         "datanode.heap": "Max heap memory for the datanode service"
     }
   }
-ex:
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/cdh/1.0/options/ -d @options.txt -H "Content-type: application/text"
 
-PUT /services/<name>/<version>/options
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/options -d@options.json -H "Content-type: application/json"
 
-  "Just a simple description of the service"
-ex:
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/cdh/1.0/description/ -d @description.txt -H "Content-type: application/text"
+### PUT /services/<name>/<version>/orquestrator
 
+    data -> orquestrator script to call to start the service
+
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/orquestrator -d@orquestrator.py -H "Content-type: application/json"

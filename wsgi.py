@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-import os
-from app import create_app
-from logging.handlers import RotatingFileHandler
 import sys
+from app import app
 import logging
 
-app = create_app(os.environ.get('FLASK_CONFIG', 'testing'))
 application = app
 
 handler = logging.StreamHandler(sys.stdout)
@@ -22,4 +19,3 @@ app.logger.handlers.extend(logging.getLogger("gunicorn").handlers)
 
 if __name__ == '__main__':
     application.run(host='127.0.0.1', port=5000)
-    #app.run(host='127.0.0.1', port=5000)

@@ -1,20 +1,21 @@
-import json
 from .errors import ValidationError
 import registry
-import kvstore as kv
 import requests
 
-# Create a global kvstore client
-ENDPOINT = 'http://consul:8500/v1/kv'
-client = kv.Client(ENDPOINT)
-
+CONSUL_ENDPOINT = 'http://consul.service.int.cesga.es:8500/v1/kv'
 NETWORKS_ENDPOINT = 'http://networks.service.int.cesga.es:5000/resources/networks/v1/networks'
-#NETWORKS_ENDPOINT = 'http://127.0.0.1:5001/resources/networks/v1/networks'
 
 
 ###########################################
 # SERVICE ATTRIBUTES PARSING AND HANDLING #
 ###########################################
+
+def validate(data, required_fields):
+    """Validate if all required_fields are in the given data dictionary"""
+    if all(field in data for field in required_fields):
+        return True
+    return False
+
 
 def parse_post_template_data(request):
     json_dict = request.get_json()
@@ -38,7 +39,7 @@ def set_node_info(node, node_name=None, instance_name=None):
 
 def set_node_dn(node_dn):
     # Initialize the registry module
-    registry.connect(ENDPOINT)
+    registry.connect(CONSUL_ENDPOINT)
 
     node = registry.Node(node_dn)
     node.node_dn = node_dn
@@ -47,6 +48,7 @@ def set_node_dn(node_dn):
 ############################
 # NODE NETWORKS MANAGEMENT #
 ############################
+
 def reserve_network_address(network, clustername, node):
     r = requests.get(NETWORKS_ENDPOINT + "/{}/addresses?{}".format(network, "free"))
     addresses = r.json()
@@ -79,6 +81,7 @@ def get_network_names():
     network_names = r.json()["networks"]
     return network_names
 
+
 def initialize_networks(instance):
     networks_list = list()
     nodes = instance.nodes
@@ -86,7 +89,8 @@ def initialize_networks(instance):
     for node in nodes:
         networks = node.networks
         for network in networks:
-            rest_network_data = reserve_network_address(network.networkname, node.clustername, node.name)
+            rest_network_data = reserve_network_address(network.networkname, node.clustername,
+                                                        node.name)
             network_dict = dict()
             for k in rest_network_data:
                 network_dict[k] = rest_network_data[k]
@@ -96,6 +100,3 @@ def initialize_networks(instance):
         # FIXME
         node.set_networks(networks_list)
         # node.networks = networks_list
-
-
-
