@@ -1,9 +1,10 @@
-from flask import abort, jsonify, request
+from flask import abort, jsonify, request, g
 from . import api, app
 from . import utils
 import json
 import requests
 import registry
+from .decorators import restricted
 
 ENDPOINT = 'http://consul:8500/v1/kv'
 MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework:5000/bigdata/mesos_framework/v1/instance'
@@ -42,30 +43,51 @@ def get_service(service, version):
     return jsonify(service.to_JSON())
 
 
+@api.route('/services/<service>/<version>/template', methods=['GET'])
+def get_service_template(service, version):
+    service = registry.get_service_template(service, version)
+    template = service.template
+    return jsonify(template)
+
+
 @api.route('/services/<service>/<version>/template', methods=['PUT'])
 def set_service_template(service, version):
     if request.headers['Content-Type'] == 'application/json':
         templatetype = 'json+jinja2'
     elif request.headers['Content-Type'] == 'application/yaml':
         templatetype = 'yaml+jinja2'
-    data = request.get_data()
+    data = request.get_data().decode('utf-8')
     template = registry.get_service_template(service, version)
     template.template = data
     template.templatetype = templatetype
     return '', 204
 
 
+@api.route('/services/<service>/<version>/options', methods=['GET'])
+def get_service_options(service, version):
+    service = registry.get_service_template(service, version)
+    options = service.options
+    return jsonify(options)
+
+
 @api.route('/services/<service>/<version>/options', methods=['PUT'])
 def set_service_options(service, version):
-    data = request.get_data()
+    data = request.get_data().decode('utf-8')
     template = registry.get_service_template(service, version)
     template.options = data
     return '', 204
 
 
+@api.route('/services/<service>/<version>/orquestrator', methods=['GET'])
+def get_service_orquestrator(service, version):
+    service = registry.get_service_template(service, version)
+    orquestrator = service.orquestrator
+    return jsonify(orquestrator)
+
+
 @api.route('/services/<service>/<version>/orquestrator', methods=['PUT'])
 def set_service_orquestrator(service, version):
-    data = request.get_data()
+    data = request.get_data().decode('utf-8')
     template = registry.get_service_template(service, version)
     template.orquestrator = data
     return '', 204
@@ -147,3 +169,9 @@ def get_instance_services(username, service, version, instanceid):
     instance = registry.get_cluster_instance(
         dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
     return jsonify({'services': [s.to_JSON() for s in instance.services]})
+
+
+@api.route('/test', methods=['GET'])
+@restricted(role='ROLE_USER')
+def echo_hello():
+    return jsonify({'message': 'Hello {}'.format(g.user)})

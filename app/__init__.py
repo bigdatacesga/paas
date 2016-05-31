@@ -15,6 +15,7 @@ api = Blueprint('api', __name__)
 from . import user_endpoints
 from . import errors
 
+
 @api.before_request
 def before_request():
     """All routes in this blueprint require authentication."""

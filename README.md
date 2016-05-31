@@ -45,7 +45,7 @@ curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services -d '{"name":"gluster"
 
   jinja2 json template: eg. see service-template.json in configuration-registry module
 
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/template -d@service-template.json -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/template --data-binary @service-template.json -H "Content-type: application/json"
 
 ### PUT /services/<name>/<version>/options
 
@@ -70,10 +70,10 @@ curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/templat
     }
   }
 
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/options -d@options.json -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/options --data-binary @options.json -H "Content-type: application/json"
 
 ### PUT /services/<name>/<version>/orquestrator
 
     data -> orquestrator script to call to start the service
 
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/orquestrator -d@orquestrator.py -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/orquestrator --data-binary @orquestrator.py -H "Content-type: application/json"
