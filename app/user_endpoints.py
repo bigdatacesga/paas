@@ -106,16 +106,18 @@ def set_service_orquestrator(service, version):
 @api.route('/services/<service>/<version>', methods=['POST'])
 def launch_service(service, version):
     """Launch a new service instance"""
-    app.logger.info('Request to launch a new service instance')
+    app.logger.info('Request to launch new service {} {}'
+                    .format(service, version))
+    app.logger.info('Request options: {}'.format(request.get_json()))
     #FIXME: get the user from g.user
     username = "jenes"
     options = request.get_json()
     instance = registry.instantiate(username, service, version, options)
     #FIXME: not needed. It will be done by docker-executor
-    utils.initialize_networks(instance)
+    #utils.initialize_networks(instance)
     #FIXME: Not needed already done by registry.instantiate()
-    for node in instance.nodes:
-        utils.set_node_info(node, node.name, instance.instance_full_name)
+    #for node in instance.nodes:
+    #    utils.set_node_info(node, node.name, instance.instance_full_name)
 
     data = {"instance_dn": str(instance)}
     data_json = json.dumps(data)
