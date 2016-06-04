@@ -14,6 +14,7 @@ registry.connect(ENDPOINT)
 
 @api.route('/services', methods=['GET'])
 def get_services():
+    """Get the current list of registered services"""
     app.logger.info('Request for all services')
     services = registry.get_services()
     print services
@@ -21,7 +22,8 @@ def get_services():
 
 
 @api.route('/services', methods=['POST'])
-def create_service():
+def register_service():
+    """Register a new service"""
     if request.is_json:
         data = request.get_json()
         if utils.validate(data, required_fields=('name', 'version', 'description')):
@@ -33,18 +35,21 @@ def create_service():
 
 @api.route('/services/<service>', methods=['GET'])
 def get_service_versions(service):
+    """Get the available versions of a service"""
     versions = registry.get_service_versions(service)
     return jsonify({'versions': versions})
 
 
 @api.route('/services/<service>/<version>', methods=['GET'])
 def get_service(service, version):
+    """Get info about a specific version of a service"""
     service = registry.get_service_template(service, version)
     return jsonify(service.to_JSON())
 
 
 @api.route('/services/<service>/<version>/template', methods=['GET'])
 def get_service_template(service, version):
+    """Get the template used to generate the resources needed by a service"""
     service = registry.get_service_template(service, version)
     template = service.template
     return jsonify(template)
@@ -52,6 +57,7 @@ def get_service_template(service, version):
 
 @api.route('/services/<service>/<version>/template', methods=['PUT'])
 def set_service_template(service, version):
+    """Set the template needed to generate the required service resources"""
     if request.headers['Content-Type'] == 'application/json':
         templatetype = 'json+jinja2'
     elif request.headers['Content-Type'] == 'application/yaml':
@@ -65,6 +71,7 @@ def set_service_template(service, version):
 
 @api.route('/services/<service>/<version>/options', methods=['GET'])
 def get_service_options(service, version):
+    """Get the options needed by the service template"""
     service = registry.get_service_template(service, version)
     options = service.options
     return jsonify(options)
@@ -72,6 +79,7 @@ def get_service_options(service, version):
 
 @api.route('/services/<service>/<version>/options', methods=['PUT'])
 def set_service_options(service, version):
+    """Set the options needed by the service template"""
     data = request.get_data().decode('utf-8')
     template = registry.get_service_template(service, version)
     template.options = data
@@ -80,6 +88,7 @@ def set_service_options(service, version):
 
 @api.route('/services/<service>/<version>/orquestrator', methods=['GET'])
 def get_service_orquestrator(service, version):
+    """Get the orquestrator needed to start the service once instantiated"""
     service = registry.get_service_template(service, version)
     orquestrator = service.orquestrator
     return jsonify(orquestrator)
@@ -87,6 +96,7 @@ def get_service_orquestrator(service, version):
 
 @api.route('/services/<service>/<version>/orquestrator', methods=['PUT'])
 def set_service_orquestrator(service, version):
+    """Set the orquestrator needed to start the service once instantiated"""
     data = request.get_data().decode('utf-8')
     template = registry.get_service_template(service, version)
     template.orquestrator = data
@@ -95,27 +105,26 @@ def set_service_orquestrator(service, version):
 
 @api.route('/services/<service>/<version>', methods=['POST'])
 def launch_service(service, version):
+    """Launch a new service instance"""
+    app.logger.info('Request to launch a new service instance')
+    #FIXME: get the user from g.user
     username = "jenes"
     options = request.get_json()
-    registry.connect(ENDPOINT)
     instance = registry.instantiate(username, service, version, options)
+    #FIXME: not needed. It will be done by docker-executor
     utils.initialize_networks(instance)
-
+    #FIXME: Not needed already done by registry.instantiate()
     for node in instance.nodes:
         utils.set_node_info(node, node.name, instance.instance_full_name)
 
     data = {"instance_dn": str(instance)}
     data_json = json.dumps(data)
     headers = {'Content-type': 'application/json'}
-    response = requests.post(MESOS_FRAMEWORK_ENDPOINT, data=data_json, headers=headers)
+    response = requests.post(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
+                             headers=headers)
     if response.status_code != 200:
+        app.logger.error('Mesos framework error: {}'.format(response))
         abort(500)
-
-    app.logger.info(
-        "Cluster was successfully forwarded to the mesos framework")
-    app.logger.info(
-        "Mesos framework response was {} ".format(response))
-
     return str(instance), 200
 
 

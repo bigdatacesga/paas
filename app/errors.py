@@ -1,6 +1,7 @@
 from flask import jsonify
 from . import api, app
 import kvstore as kv
+import registry
 
 
 class ValidationError(ValueError):
@@ -33,6 +34,14 @@ def handle_invalid_usage(error):
 @api.errorhandler(ValidationError)
 def bad_request(e):
     response = jsonify({'status': 400, 'error': 'bad request',
+                        'message': e.args[0]})
+    response.status_code = 400
+    return response
+
+
+@api.errorhandler(registry.InvalidOptionsError)
+def invalid_instantiation_options(e):
+    response = jsonify({'status': 400, 'error': 'invalid options',
                         'message': e.args[0]})
     response.status_code = 400
     return response

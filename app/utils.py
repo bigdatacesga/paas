@@ -12,8 +12,7 @@ def validate(data, required_fields):
 
 
 def set_node_info(node, node_name=None, instance_name=None):
-    node_id = instance_name + "_" + node_name
-    node.node_id = node_id
+    node.node_id = instance_name + "_" + node_name
     node.clustername = instance_name
 
 
