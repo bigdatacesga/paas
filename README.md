@@ -1,32 +1,33 @@
-CESGA Big Data Infrastructure
-=======================
+Big Data PaaS REST API
+======================
 
-Big Data Services REST API
-=======================
+Installation
+------------
 
-This repository contains a REST API built using Flask.
-
-It is based on layout recommended by Miguel Grinberg on the 
-[git repo](https://github.com/miguelgrinberg/oreilly-flask-apis-video.git)
-of the [Building Web APIs with Flask](http://bit.ly/flaskapi) course.
-
-
--- To create virtual environment and instal dependencies
-virtualenv venv
-. venv/bin/activate
-pip install -r requirements.txt
-
--- To run
-cd rest
-python run.py
+    virtualenv venv
+    . venv/bin/activate
+    pip install -r requirements.txt
+    python wsgi.py
 
 
-This API will act as middleware between the user graphical interface, the cesga-big-data-services-webui project and the set of scripts and other software that will take care of the provisioning, registering, launching, managing and stopping of the various services provided.
+The Big Data PaaS API has been designed using a microservices architecture which simplifies its deployment and allows for better scalability.
+Different services are involved for registration, provisioning, scheduling and configuration.
 
 Test with:
 
-curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services/ -d '{"service_type": "mpi", "service_name": "1.7.0", "cpu": 2, "mem": 2048, "num_nodes": 2, "num_disks": 2, "custom_disks": "False", "clustername": "testingPost"}' -H "Content-type: application/json"
+```
+curl -H "Content-type: application/json" -X POST -d '{"size": 2, "disks": 2}' http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11
+```
 
+Tracking instance status
+------------------------
+The status of a given instance can be tracked using instance.status:
+
+    prepared
+    submitted
+    queued
+    scheduled
+    running
 
 
 Registering services

@@ -34,7 +34,7 @@ def handle_invalid_usage(error):
 @api.errorhandler(ValidationError)
 def bad_request(e):
     response = jsonify({'status': 400, 'error': 'bad request',
-                        'message': e.args[0]})
+                        'message': e.message})
     response.status_code = 400
     return response
 
@@ -42,7 +42,7 @@ def bad_request(e):
 @api.errorhandler(registry.InvalidOptionsError)
 def invalid_instantiation_options(e):
     response = jsonify({'status': 400, 'error': 'invalid options',
-                        'message': e.args[0]})
+                        'message': e.message})
     response.status_code = 400
     return response
 
@@ -75,6 +75,6 @@ def method_not_supported(e):
 @api.app_errorhandler(500)  # this has to be an app-wide handler
 def internal_server_error(e):
     response = jsonify({'status': 500, 'error': 'internal server error',
-                        'message': e.args[0]})
+                        'message': e.message})
     response.status_code = 500
     return response
