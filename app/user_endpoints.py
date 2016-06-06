@@ -6,8 +6,11 @@ import requests
 import registry
 from .decorators import restricted
 
+#from .configuration_registry import registry
+
 ENDPOINT = 'http://consul:8500/v1/kv'
 MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework:5000/bigdata/mesos_framework/v1/instance'
+#MESOS_FRAMEWORK_ENDPOINT = 'http://127.0.0.1:5001/bigdata/mesos_framework/v1/instance'
 
 registry.connect(ENDPOINT)
 
@@ -17,7 +20,6 @@ def get_services():
     """Get the current list of registered services"""
     app.logger.info('Request for all services')
     services = registry.get_services()
-    print services
     return jsonify({'services': services})
 
 
@@ -110,12 +112,11 @@ def launch_service(service, version):
     #FIXME: get the user from g.user
     username = "jenes"
     options = request.get_json()
-    instance = registry.instantiate(username, service, version, options)
-    #FIXME: not needed. It will be done by docker-executor
-    utils.initialize_networks(instance)
-    #FIXME: Not needed already done by registry.instantiate()
+    instancename = username + '_' + service + '_' + version
+    instance = registry.instantiate(username, service, version, instancename, options)
+
     for node in instance.nodes:
-        utils.set_node_info(node, node.name, instance.instance_full_name)
+        node.status = "submitted"
 
     data = {"instance_dn": str(instance)}
     data_json = json.dumps(data)
@@ -125,6 +126,7 @@ def launch_service(service, version):
     if response.status_code != 200:
         app.logger.error('Mesos framework error: {}'.format(response))
         abort(500)
+
     return str(instance), 200
 
 
@@ -139,14 +141,14 @@ def get_all_instances():
 def get_user_instances(username):
     app.logger.info('Request for instances of user {} '.format(username))
     instances = registry.get_cluster_instances(username)
-    return jsonify({'services': instances})
+    return jsonify({'instances': instances})
 
 
 @api.route('/instances/<username>/<service>', methods=['GET'])
 def get_user_service_instances(username, service):
     app.logger.info('Request for instances of user {} and service {}'.format(username, service))
     instances = registry.get_cluster_instances(username, service)
-    return jsonify({'services': instances})
+    return jsonify({'instances': instances})
 
 
 @api.route('/instances/<username>/<service>/<version>', methods=['GET'])
@@ -154,7 +156,7 @@ def get_user_service_version_instances(username, service, version):
     app.logger.info('Request for instances of user {} and service {} with version {}'
                     .format(username, service, version))
     instances = registry.get_cluster_instances(username, service, version)
-    return jsonify({'services': instances})
+    return jsonify({'instances': instances})
 
 
 @api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['GET'])
