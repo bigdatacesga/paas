@@ -30,6 +30,13 @@ The status of a given instance can be tracked using instance.status:
     running
 
 
+Launching instances
+--------------------
+
+curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services/cdh/5.7.2 -d '{"slaves.number": 3}' -H "Content-type: application/json"
+
+
+
 Registering services
 --------------------
 ### POST /services

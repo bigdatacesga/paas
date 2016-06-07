@@ -115,6 +115,9 @@ def launch_service(service, version):
     instancename = username + '_' + service + '_' + version
     instance = registry.instantiate(username, service, version, instancename, options)
 
+    # Temporary fix
+    utils.initialize_networks(instance)
+
     for node in instance.nodes:
         node.status = "submitted"
 
@@ -133,21 +136,36 @@ def launch_service(service, version):
 @api.route('/instances', methods=['GET'])
 def get_all_instances():
     app.logger.info('Request for all instances')
-    instances = registry.get_cluster_instances()
+
+    attributes = None
+    if request.args.get('show') is not None:
+        attributes = request.args.get('show').split(',')
+
+    instances = registry.get_cluster_instances(attributes=attributes)
     return jsonify({'instances': instances})
 
 
 @api.route('/instances/<username>', methods=['GET'])
 def get_user_instances(username):
     app.logger.info('Request for instances of user {} '.format(username))
-    instances = registry.get_cluster_instances(username)
+
+    attributes = None
+    if request.args.get('show') is not None:
+        attributes = request.args.get('show').split(',')
+
+    instances = registry.get_cluster_instances(user=username, attributes=attributes)
     return jsonify({'instances': instances})
 
 
 @api.route('/instances/<username>/<service>', methods=['GET'])
 def get_user_service_instances(username, service):
     app.logger.info('Request for instances of user {} and service {}'.format(username, service))
-    instances = registry.get_cluster_instances(username, service)
+
+    attributes = None
+    if request.args.get('show') is not None:
+        attributes = request.args.get('show').split(',')
+
+    instances = registry.get_cluster_instances(username, service, attributes=attributes)
     return jsonify({'instances': instances})
 
 
@@ -155,7 +173,12 @@ def get_user_service_instances(username, service):
 def get_user_service_version_instances(username, service, version):
     app.logger.info('Request for instances of user {} and service {} with version {}'
                     .format(username, service, version))
-    instances = registry.get_cluster_instances(username, service, version)
+
+    attributes = None
+    if request.args.get('show') is not None:
+        attributes = request.args.get('show').split(',')
+
+    instances = registry.get_cluster_instances(username, service, version, attributes=attributes)
     return jsonify({'instances': instances})
 
 
