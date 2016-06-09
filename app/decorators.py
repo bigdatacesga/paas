@@ -57,6 +57,47 @@ def restricted(role='ROLE_USER'):
         return decorated
     return decorator
 
+def restricted_V2(role='ROLE_USER'):
+    #FIXME Hard coded ignore?
+    IGNORE_AUTH = app.config.get('IGNORE_AUTH')
+    KEYS = app.config.get('SECRET_KEYS')
+    if IGNORE_AUTH is not True:
+
+        token = request.headers.get('x-auth-token')
+
+        print('DEBUG {0}'.format(token))
+        if token is None:
+            return _no_token()
+
+        if _is_token_signature_valid(token):
+            fields = token.split(':')
+
+            username = base64.b64decode(fields[0])
+            g.user = username
+
+            passwd_encrypted = fields[1]
+            crypter = Crypter.Read(KEYS)
+            passwd = crypter.Decrypt(passwd_encrypted)
+            g.passwd = passwd
+
+            token_role = base64.b64decode(fields[2])
+            g.role = token_role
+
+            #expires = time.localtime(int(fields[3])/1000)
+            expires = int(fields[3])/1000
+        else:
+            return _unauthorized()
+
+        if token_role != role:
+            return _invalid_role()
+
+        now = time.time()
+        if now > expires:
+            return _expired_token()
+
+        return None
+
+
 # def restricted(role='ROLE_USER'):
 #     def decorator(f):
 #         @functools.wraps(f)
