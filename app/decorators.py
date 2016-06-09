@@ -7,50 +7,97 @@ import time
 import hashlib
 
 KEYS = app.config.get('SECRET_KEYS')
-
+IGNORE_AUTH = app.config.get('IGNORE_AUTH')
 
 def restricted(role='ROLE_USER'):
     def decorator(f):
         @functools.wraps(f)
         def decorated(*args, **kwargs):
-            token = request.headers.get('x-auth-token')
 
-            print 'DEBUG {0}'.format(token)
-            if token is None:
-                return _no_token()
+            #FIXME Hard coded ignore?
+            IGNORE_AUTH = app.config.get('IGNORE_AUTH')
+            KEYS = app.config.get('SECRET_KEYS')
+            if IGNORE_AUTH is not True:
 
-            if _is_token_signature_valid(token):
-                fields = token.split(':')
+                token = request.headers.get('x-auth-token')
 
-                username = base64.b64decode(fields[0])
-                g.user = username
+                print('DEBUG {0}'.format(token))
+                if token is None:
+                    return _no_token()
 
-                passwd_encrypted = fields[1]
-                crypter = Crypter.Read(KEYS)
-                passwd = crypter.Decrypt(passwd_encrypted)
-                g.passwd = passwd
+                if _is_token_signature_valid(token):
+                    fields = token.split(':')
 
-                token_role = base64.b64decode(fields[2])
-                g.role = token_role
+                    username = base64.b64decode(fields[0])
+                    g.user = username
 
-                #expires = time.localtime(int(fields[3])/1000)
-                expires = int(fields[3])/1000
-            else:
-                return _unauthorized()
+                    passwd_encrypted = fields[1]
+                    crypter = Crypter.Read(KEYS)
+                    passwd = crypter.Decrypt(passwd_encrypted)
+                    g.passwd = passwd
 
-            if token_role != role:
-                return _invalid_role()
+                    token_role = base64.b64decode(fields[2])
+                    g.role = token_role
 
-            now = time.time()
-            if now > expires:
-                return _expired_token()
+                    #expires = time.localtime(int(fields[3])/1000)
+                    expires = int(fields[3])/1000
+                else:
+                    return _unauthorized()
 
-            results = f(*args, **kwargs)
-            response = make_response(results)
-            return response
+                if token_role != role:
+                    return _invalid_role()
+
+                now = time.time()
+                if now > expires:
+                    return _expired_token()
+
+                results = f(*args, **kwargs)
+                response = make_response(results)
+                return response
         return decorated
     return decorator
 
+# def restricted(role='ROLE_USER'):
+#     def decorator(f):
+#         @functools.wraps(f)
+#         def decorated(*args, **kwargs):
+#             token = request.headers.get('x-auth-token')
+#
+#             print('DEBUG {0}'.format(token))
+#             if token is None:
+#                 return _no_token()
+#
+#             if _is_token_signature_valid(token):
+#                 fields = token.split(':')
+#
+#                 username = base64.b64decode(fields[0])
+#                 g.user = username
+#
+#                 passwd_encrypted = fields[1]
+#                 crypter = Crypter.Read(KEYS)
+#                 passwd = crypter.Decrypt(passwd_encrypted)
+#                 g.passwd = passwd
+#
+#                 token_role = base64.b64decode(fields[2])
+#                 g.role = token_role
+#
+#                 #expires = time.localtime(int(fields[3])/1000)
+#                 expires = int(fields[3])/1000
+#             else:
+#                 return _unauthorized()
+#
+#             if token_role != role:
+#                 return _invalid_role()
+#
+#             now = time.time()
+#             if now > expires:
+#                 return _expired_token()
+#
+#             results = f(*args, **kwargs)
+#             response = make_response(results)
+#             return response
+#         return decorated
+#     return decorator
 
 def _is_token_signature_valid(token):
     fields = token.split(':')

@@ -1,2 +1,0 @@
-0.1.0
-+ Basic functionalities, register a cluster using info from user request and basic tempates from consul

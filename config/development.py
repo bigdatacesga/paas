@@ -2,14 +2,10 @@ import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Secret passphrase
-# FIXME: Temporarily SECRET must have the same value as SECRET_KEYS
-#        due to the current spring boot implementation
-#SECRET = '/home/jonatan/Desktop/TFM/portal_keys' #'/etc/keyczar/keys'
-# Secret keyczar keys
-#SECRET_KEYS = '/home/jonatan/Desktop/TFM/portal_keys' #'/etc/keyczar/keys'
-# Fill as needed
 DEBUG = True
 IGNORE_AUTH = True
-# SECRET_KEY = 'admin'
+MESOS_FRAMEWORK_ENDPOINT = 'http://127.0.0.1:5001/bigdata/mesos_framework/v1/instance'
+CONSUL_ENDPOINT = 'http://consul:8500/v1/kv'
 
+SECRET = '/etc/keyczar/keys'
+SECRET_KEYS = '/etc/keyczar/keys'

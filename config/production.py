@@ -9,6 +9,7 @@ SECRET = '/etc/keyczar/keys'
 # Secret keyczar keys
 SECRET_KEYS = '/etc/keyczar/keys'
 # Fill as needed
-# DEBUG = False
-# IGNORE_AUTH = True
-# SECRET_KEY = 'admin'
+DEBUG = False
+IGNORE_AUTH = False
+MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework:5000/bigdata/mesos_framework/v1/instance'
+CONSUL_ENDPOINT = 'http://consul:8500/v1/kv'
