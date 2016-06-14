@@ -5,9 +5,9 @@ from flask import Blueprint
 
 app = Flask(__name__)
 # Read configuration to apply from environment
-config_name = os.environ.get('FLASK_CONFIG', 'production')
+#config_name = os.environ.get('FLASK_CONFIG', 'production')
 #config_name = os.environ.get('FLASK_CONFIG', 'testing')
-#config_name = os.environ.get('FLASK_CONFIG', 'development')
+config_name = os.environ.get('FLASK_CONFIG', 'development')
 
 # apply configuration
 cfg = os.path.join(os.getcwd(), 'config', config_name + '.py')
