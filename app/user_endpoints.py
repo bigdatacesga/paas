@@ -198,6 +198,24 @@ def get_instance_services(username, service, version, instanceid):
     return jsonify({'services': [s.to_JSON() for s in instance.services]})
 
 
+@api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['DELETE'])
+def destroy_instance(username, service, version, instanceid):
+    # Remove from the mesos system
+    instance = registry.get_cluster_instance(username, service, version, instanceid)
+    data = {"instance_dn": str(instance)}
+    data_json = json.dumps(data)
+    headers = {'Content-type': 'application/json'}
+    response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
+                             headers=headers)
+    if response.status_code != 200:
+        app.logger.error('Mesos framework error: {}'.format(response))
+        abort(500)
+
+    # Remove from the kvstore
+    # registry.deinstantiate(username, service, version, instanceid)
+    return jsonify({"message": "success"}), 200
+
+
 @api.route('/test', methods=['GET'])
 @restricted(role='ROLE_USER')
 def echo_hello():
