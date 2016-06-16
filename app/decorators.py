@@ -9,136 +9,48 @@ import hashlib
 KEYS = app.config.get('SECRET_KEYS')
 IGNORE_AUTH = app.config.get('IGNORE_AUTH')
 
+
 def restricted(role='ROLE_USER'):
     def decorator(f):
         @functools.wraps(f)
         def decorated(*args, **kwargs):
+            token = request.headers.get('x-auth-token')
 
-            #FIXME Hard coded ignore?
-            IGNORE_AUTH = app.config.get('IGNORE_AUTH')
-            KEYS = app.config.get('SECRET_KEYS')
-            if IGNORE_AUTH is not True:
+            if token is None:
+                return _no_token()
 
-                token = request.headers.get('x-auth-token')
+            if _is_token_signature_valid(token):
+                fields = token.split(':')
 
-                print('DEBUG {0}'.format(token))
-                if token is None:
-                    return _no_token()
+                username = base64.b64decode(fields[0])
+                g.user = username
 
-                if _is_token_signature_valid(token):
-                    fields = token.split(':')
+                passwd_encrypted = fields[1]
+                crypter = Crypter.Read(KEYS)
+                passwd = crypter.Decrypt(passwd_encrypted)
+                g.passwd = passwd
 
-                    username = base64.b64decode(fields[0])
-                    g.user = username
+                token_role = base64.b64decode(fields[2])
+                g.role = token_role
 
-                    passwd_encrypted = fields[1]
-                    crypter = Crypter.Read(KEYS)
-                    passwd = crypter.Decrypt(passwd_encrypted)
-                    g.passwd = passwd
+                #expires = time.localtime(int(fields[3])/1000)
+                expires = int(fields[3])/1000
+            else:
+                return _unauthorized()
 
-                    token_role = base64.b64decode(fields[2])
-                    g.role = token_role
+            if token_role != role:
+                return _invalid_role()
 
-                    #expires = time.localtime(int(fields[3])/1000)
-                    expires = int(fields[3])/1000
-                else:
-                    return _unauthorized()
+            now = time.time()
+            if now > expires:
+                return _expired_token()
 
-                if token_role != role:
-                    return _invalid_role()
-
-                now = time.time()
-                if now > expires:
-                    return _expired_token()
-
-                results = f(*args, **kwargs)
-                response = make_response(results)
-                return response
+            results = f(*args, **kwargs)
+            response = make_response(results)
+            return response
         return decorated
     return decorator
 
-def restricted_V2(role='ROLE_USER'):
-    #FIXME Hard coded ignore?
-    IGNORE_AUTH = app.config.get('IGNORE_AUTH')
-    KEYS = app.config.get('SECRET_KEYS')
-    if IGNORE_AUTH is not True:
-
-        token = request.headers.get('x-auth-token')
-
-        print('DEBUG {0}'.format(token))
-        if token is None:
-            return _no_token()
-
-        if _is_token_signature_valid(token):
-            fields = token.split(':')
-
-            username = base64.b64decode(fields[0])
-            g.user = username
-
-            passwd_encrypted = fields[1]
-            crypter = Crypter.Read(KEYS)
-            passwd = crypter.Decrypt(passwd_encrypted)
-            g.passwd = passwd
-
-            token_role = base64.b64decode(fields[2])
-            g.role = token_role
-
-            #expires = time.localtime(int(fields[3])/1000)
-            expires = int(fields[3])/1000
-        else:
-            return _unauthorized()
-
-        if token_role != role:
-            return _invalid_role()
-
-        now = time.time()
-        if now > expires:
-            return _expired_token()
-
-        return None
-
-
-# def restricted(role='ROLE_USER'):
-#     def decorator(f):
-#         @functools.wraps(f)
-#         def decorated(*args, **kwargs):
-#             token = request.headers.get('x-auth-token')
-#
-#             print('DEBUG {0}'.format(token))
-#             if token is None:
-#                 return _no_token()
-#
-#             if _is_token_signature_valid(token):
-#                 fields = token.split(':')
-#
-#                 username = base64.b64decode(fields[0])
-#                 g.user = username
-#
-#                 passwd_encrypted = fields[1]
-#                 crypter = Crypter.Read(KEYS)
-#                 passwd = crypter.Decrypt(passwd_encrypted)
-#                 g.passwd = passwd
-#
-#                 token_role = base64.b64decode(fields[2])
-#                 g.role = token_role
-#
-#                 #expires = time.localtime(int(fields[3])/1000)
-#                 expires = int(fields[3])/1000
-#             else:
-#                 return _unauthorized()
-#
-#             if token_role != role:
-#                 return _invalid_role()
-#
-#             now = time.time()
-#             if now > expires:
-#                 return _expired_token()
-#
-#             results = f(*args, **kwargs)
-#             response = make_response(results)
-#             return response
-#         return decorated
-#     return decorator
 
 def _is_token_signature_valid(token):
     fields = token.split(':')
@@ -178,3 +90,16 @@ def _no_token():
                         'message': 'no token has been provided'})
     response.status_code = 401
     return response
+
+# In case authentication should be ignored we simply overwrite the decorator
+if IGNORE_AUTH:
+    def no_auth(role):
+        def decorator(f):
+            @functools.wraps(f)
+            def decorated(*args, **kwargs):
+                results = f(*args, **kwargs)
+                response = make_response(results)
+                return response
+            return decorated
+        return decorator
+    restricted = no_auth

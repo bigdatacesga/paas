@@ -14,7 +14,9 @@ MESOS_FRAMEWORK_ENDPOINT = app.config.get('MESOS_FRAMEWORK_ENDPOINT')
 
 registry.connect(CONSUL_ENDPOINT)
 
+
 @api.route('/services', methods=['POST'])
+@restricted(role='ROLE_USER')
 def register_service():
     """Register a new service"""
     if request.is_json:
@@ -25,10 +27,11 @@ def register_service():
             return str(template), 200
     abort(400)
 
+
 @api.route('/services', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_services():
     """Get the current list of registered services"""
-    app.logger.info('Request for all services')
     services = registry.get_services()
     return jsonify({'services': services})
 
@@ -41,6 +44,7 @@ def get_service_versions(service):
 
 
 @api.route('/services/<service>/<version>', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_service(service, version):
     """Get info about a specific version of a service"""
     service = registry.get_service_template(service, version)
@@ -48,6 +52,7 @@ def get_service(service, version):
 
 
 @api.route('/services/<service>/<version>/template', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_service_template(service, version):
     """Get the template used to generate the resources needed by a service"""
     service = registry.get_service_template(service, version)
@@ -56,6 +61,7 @@ def get_service_template(service, version):
 
 
 @api.route('/services/<service>/<version>/template', methods=['PUT'])
+@restricted(role='ROLE_USER')
 def set_service_template(service, version):
     """Set the template needed to generate the required service resources"""
     if request.headers['Content-Type'] == 'application/json':
@@ -70,6 +76,7 @@ def set_service_template(service, version):
 
 
 @api.route('/services/<service>/<version>/options', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_service_options(service, version):
     """Get the options needed by the service template"""
     service = registry.get_service_template(service, version)
@@ -78,6 +85,7 @@ def get_service_options(service, version):
 
 
 @api.route('/services/<service>/<version>/options', methods=['PUT'])
+@restricted(role='ROLE_USER')
 def set_service_options(service, version):
     """Set the options needed by the service template"""
     data = request.get_data().decode('utf-8')
@@ -87,6 +95,7 @@ def set_service_options(service, version):
 
 
 @api.route('/services/<service>/<version>/orquestrator', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_service_orquestrator(service, version):
     """Get the orquestrator needed to start the service once instantiated"""
     service = registry.get_service_template(service, version)
@@ -95,6 +104,7 @@ def get_service_orquestrator(service, version):
 
 
 @api.route('/services/<service>/<version>/orquestrator', methods=['PUT'])
+@restricted(role='ROLE_USER')
 def set_service_orquestrator(service, version):
     """Set the orquestrator needed to start the service once instantiated"""
     data = request.get_data().decode('utf-8')
@@ -104,11 +114,12 @@ def set_service_orquestrator(service, version):
 
 
 @api.route('/services/<service>/<version>', methods=['POST'])
+@restricted(role='ROLE_USER')
 def launch_service(service, version):
     """Launch a new service instance"""
-    app.logger.info('Request to launch a new service instance')
-    #FIXME: get the user from g.user
-    username = "jenes"
+    app.logger.info('Request to launch a new service instance from user {}'
+                    .format(g.user))
+    username = g.user
     options = request.get_json()
     instance = registry.instantiate(username, service, version, options)
 
@@ -128,6 +139,7 @@ def launch_service(service, version):
 
 
 @api.route('/instances', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_all_instances():
     app.logger.info('Request for all instances')
     instances = registry.get_cluster_instances()
@@ -135,6 +147,7 @@ def get_all_instances():
 
 
 @api.route('/instances/<username>', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_user_instances(username):
     app.logger.info('Request for instances of user {} '.format(username))
 
@@ -143,6 +156,7 @@ def get_user_instances(username):
 
 
 @api.route('/instances/<username>/<service>', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_user_service_instances(username, service):
     app.logger.info('Request for instances of user {} and service {}'.format(username, service))
     instances = registry.get_cluster_instances(username, service)
@@ -150,6 +164,7 @@ def get_user_service_instances(username, service):
 
 
 @api.route('/instances/<username>/<service>/<version>', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_user_service_version_instances(username, service, version):
     app.logger.info('Request for instances of user {} and service {} with version {}'
                     .format(username, service, version))
@@ -158,6 +173,7 @@ def get_user_service_version_instances(username, service, version):
 
 
 @api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_instance(username, service, version, instanceid):
     instance = registry.get_cluster_instance(dn='/instances/{}/{}/{}/{}'
                                              .format(username, service, version, instanceid))
@@ -165,6 +181,7 @@ def get_instance(username, service, version, instanceid):
 
 
 @api.route('/instances/<username>/<service>/<version>/<instanceid>/nodes', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_instance_nodes(username, service, version, instanceid):
     app.logger.info('Request for instance nodes of user {} and service {} with '
                     'version {}'.format(username, service, version))
@@ -174,6 +191,7 @@ def get_instance_nodes(username, service, version, instanceid):
 
 
 @api.route('/instances/<username>/<service>/<version>/<instanceid>/services', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_instance_services(username, service, version, instanceid):
     instance = registry.get_cluster_instance(
         dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))

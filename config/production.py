@@ -1,7 +1,3 @@
-import os
-
-basedir = os.path.abspath(os.path.dirname(__file__))
-
 # Secret passphrase
 # FIXME: Temporarily SECRET must have the same value as SECRET_KEYS
 #        due to the current spring boot implementation
