@@ -60,7 +60,7 @@ def print_instance(instance, filters):
 
 def launch_orquestrator_when_ready(clusterdn):
     """Launch the orquestrator process"""
-    cluster = registry.get_cluster_instance(clusterdn)
+    cluster = registry.get_cluster_instance(dn=clusterdn)
     clusterid = registry.id_from(clusterdn)
 
     def orquestrate_when_cluster_is_ready():

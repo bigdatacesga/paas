@@ -213,7 +213,7 @@ def get_instance_services(username, service, version, instanceid):
 def destroy_instance(username, service, version, instanceid):
     # Remove from the mesos system
     instance = registry.get_cluster_instance(username, service, version, instanceid)
-    data = {"instance_dn": str(instance)}
+    data = {"clusterdn": str(instance)}
     data_json = json.dumps(data)
     headers = {'Content-type': 'application/json'}
     response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
