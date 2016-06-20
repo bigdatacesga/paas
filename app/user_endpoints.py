@@ -116,17 +116,19 @@ def set_service_orquestrator(service, version):
 @api.route('/services/<service>/<version>', methods=['POST'])
 @restricted(role='ROLE_USER')
 def launch_service(service, version):
-    """Launch a new service instance"""
-    app.logger.info('Request to launch a new service instance from user {}'
+    """Launch a new cluster instance"""
+    app.logger.info('Request to launch a new cluster instance from user {}'
                     .format(g.user))
     username = g.user
     options = request.get_json()
-    instance = registry.instantiate(username, service, version, options)
+    cluster = registry.instantiate(username, service, version, options)
+    clusterdn = str(cluster)
 
-    for node in instance.nodes:
+    for node in cluster.nodes:
         node.status = "submitted"
 
-    data = {"instance_dn": str(instance)}
+    app.logger.info('Submitting cluster instance to Mesos')
+    data = {"clusterdn": clusterdn}
     data_json = json.dumps(data)
     headers = {'Content-type': 'application/json'}
     response = requests.post(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
@@ -135,7 +137,10 @@ def launch_service(service, version):
         app.logger.error('Mesos framework error: {}'.format(response))
         abort(500)
 
-    return str(instance), 200
+    app.logger.info('Launching orquestrator thread')
+    utils.launch_orquestrator_when_ready(clusterdn)
+
+    return clusterdn, 200
 
 
 @api.route('/instances', methods=['GET'])
@@ -224,6 +229,8 @@ def destroy_instance(username, service, version, instanceid):
     # registry.deinstantiate(username, service, version, instanceid)
     return jsonify({"message": "success"}), 200
 
+
+# FIXME Move endpoint to a dedicated REST service: orquestrator
 @api.route('/instances/<username>/<service>/<version>/<instanceid>/orquestrate', methods=['GET'])
 @restricted(role='ROLE_USER')
 def run_orquestrator(username, service, version, instanceid):
@@ -250,6 +257,7 @@ def run_orquestrator(username, service, version, instanceid):
     # exec orquestrator
 
     return jsonify({'code': orquestrator})
+
 
 @api.route('/test', methods=['GET'])
 @restricted(role='ROLE_USER')
