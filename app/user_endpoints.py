@@ -143,7 +143,9 @@ def launch_service(service, version):
 def get_all_instances():
     app.logger.info('Request for all instances')
     instances = registry.get_cluster_instances()
-    return jsonify({'instances': [utils.print_instance(instance, (None, None, None)) for instance in instances]})
+    return jsonify({
+        'instances': [utils.print_instance(instance, (None, None, None))
+                      for instance in instances]})
 
 
 @api.route('/instances/<username>', methods=['GET'])
@@ -152,7 +154,9 @@ def get_user_instances(username):
     app.logger.info('Request for instances of user {} '.format(username))
 
     instances = registry.get_cluster_instances(user=username)
-    return jsonify({'instances': [utils.print_instance(instance, (username, None, None)) for instance in instances]})
+    return jsonify({
+        'instances': [utils.print_instance(instance, (username, None, None))
+                      for instance in instances]})
 
 
 @api.route('/instances/<username>/<service>', methods=['GET'])
@@ -160,7 +164,9 @@ def get_user_instances(username):
 def get_user_service_instances(username, service):
     app.logger.info('Request for instances of user {} and service {}'.format(username, service))
     instances = registry.get_cluster_instances(username, service)
-    return jsonify({'instances': [utils.print_instance(instance, (username, service, None)) for instance in instances]})
+    return jsonify({
+        'instances': [utils.print_instance(instance, (username, service, None))
+                      for instance in instances]})
 
 
 @api.route('/instances/<username>/<service>/<version>', methods=['GET'])
@@ -169,7 +175,9 @@ def get_user_service_version_instances(username, service, version):
     app.logger.info('Request for instances of user {} and service {} with version {}'
                     .format(username, service, version))
     instances = registry.get_cluster_instances(username, service, version)
-    return jsonify({'instances': [utils.print_instance(instance, (username, service, version)) for instance in instances]})
+    return jsonify({
+        'instances': [utils.print_instance(instance, (username, service, version))
+                      for instance in instances]})
 
 
 @api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['GET'])
@@ -207,7 +215,7 @@ def destroy_instance(username, service, version, instanceid):
     data_json = json.dumps(data)
     headers = {'Content-type': 'application/json'}
     response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
-                             headers=headers)
+                               headers=headers)
     if response.status_code != 200:
         app.logger.error('Mesos framework error: {}'.format(response))
         abort(500)
