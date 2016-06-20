@@ -97,6 +97,8 @@ if IGNORE_AUTH:
         def decorator(f):
             @functools.wraps(f)
             def decorated(*args, **kwargs):
+                g.user = 'test'
+                g.role = 'ROLE_USER'
                 results = f(*args, **kwargs)
                 response = make_response(results)
                 return response
