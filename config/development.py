@@ -8,5 +8,5 @@ SECRET_KEYS = '/etc/keyczar/keys'
 # Fill as needed
 DEBUG = True
 IGNORE_AUTH = True
-MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework:5000/bigdata/mesos_framework/v1/instance'
+MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework:5000/bigdata/mesos_framework/v1/clusters'
 CONSUL_ENDPOINT = 'http://consul:8500/v1/kv'

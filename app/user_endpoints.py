@@ -129,10 +129,7 @@ def launch_service(service, version):
 
     app.logger.info('Submitting cluster instance to Mesos')
     data = {"clusterdn": clusterdn}
-    data_json = json.dumps(data)
-    headers = {'Content-type': 'application/json'}
-    response = requests.post(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
-                             headers=headers)
+    response = requests.post(MESOS_FRAMEWORK_ENDPOINT, json=data)
     if response.status_code != 200:
         app.logger.error('Mesos framework error: {}'.format(response))
         abort(500)
