@@ -199,6 +199,7 @@ def get_instance_services(username, service, version, instanceid):
 
 
 @api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['DELETE'])
+@restricted(role='ROLE_USER')
 def destroy_instance(username, service, version, instanceid):
     # Remove from the mesos system
     instance = registry.get_cluster_instance(username, service, version, instanceid)
@@ -215,6 +216,32 @@ def destroy_instance(username, service, version, instanceid):
     # registry.deinstantiate(username, service, version, instanceid)
     return jsonify({"message": "success"}), 200
 
+@api.route('/instances/<username>/<service>/<version>/<instanceid>/orquestrate', methods=['GET'])
+@restricted(role='ROLE_USER')
+def run_orquestrator(username, service, version, instanceid):
+    instance = registry.get_cluster_instance(
+        dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
+    service = registry.get_service_template(service, version)
+    orquestrator = service.orquestrator
+
+    import os
+
+    os.environ['INSTANCE'] = str(instance)
+    os.environ['REGISTRY'] = app.config.get('CONSUL_ENDPOINT')
+
+    os.environ['OP'] = "start"
+    exec orquestrator
+
+    # os.environ['OP'] = "stop"
+    # exec orquestrator
+    #
+    # os.environ['OP'] = "status"
+    # exec orquestrator
+    #
+    # os.environ['OP'] = "restart"
+    # exec orquestrator
+
+    return jsonify({'code': orquestrator})
 
 @api.route('/test', methods=['GET'])
 @restricted(role='ROLE_USER')
