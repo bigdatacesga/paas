@@ -6,8 +6,6 @@ import requests
 import registry
 from .decorators import restricted
 
-#from .configuration_registry import registry
-
 CONSUL_ENDPOINT = app.config.get('CONSUL_ENDPOINT')
 MESOS_FRAMEWORK_ENDPOINT = app.config.get('MESOS_FRAMEWORK_ENDPOINT')
 
@@ -15,10 +13,10 @@ MESOS_FRAMEWORK_ENDPOINT = app.config.get('MESOS_FRAMEWORK_ENDPOINT')
 registry.connect(CONSUL_ENDPOINT)
 
 
-@api.route('/services', methods=['POST'])
+@api.route('/products', methods=['POST'])
 @restricted(role='ROLE_USER')
-def register_service():
-    """Register a new service"""
+def register_product():
+    """Register a new product"""
     if request.is_json:
         data = request.get_json()
         if utils.validate(data, required_fields=('name', 'version', 'description')):
@@ -28,100 +26,100 @@ def register_service():
     abort(400)
 
 
-@api.route('/services', methods=['GET'])
+@api.route('/products', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_services():
-    """Get the current list of registered services"""
-    services = registry.get_services()
-    return jsonify({'services': services})
+def get_products():
+    """Get the current list of registered products"""
+    products = registry.get_products()
+    return jsonify({'products': products})
 
 
-@api.route('/services/<service>', methods=['GET'])
-def get_service_versions(service):
-    """Get the available versions of a service"""
-    versions = registry.get_service_versions(service)
+@api.route('/products/<product>', methods=['GET'])
+def get_product_versions(product):
+    """Get the available versions of a produt"""
+    versions = registry.get_product_versions(product)
     return jsonify({'versions': versions})
 
 
-@api.route('/services/<service>/<version>', methods=['GET'])
+@api.route('/products/<product>/<version>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_service(service, version):
-    """Get info about a specific version of a service"""
-    service = registry.get_service_template(service, version)
-    return jsonify(service.to_dict())
+def get_product(product, version):
+    """Get info about a specific version of a product"""
+    product = registry.get_product(product, version)
+    return jsonify(product.to_dict())
 
 
-@api.route('/services/<service>/<version>/template', methods=['GET'])
+@api.route('/products/<product>/<version>/template', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_service_template(service, version):
-    """Get the template used to generate the resources needed by a service"""
-    service = registry.get_service_template(service, version)
-    template = service.template
+def get_product_template(product, version):
+    """Get the template used to generate the resources needed by a product"""
+    product = registry.get_product(product, version)
+    template = product.template
     return jsonify(template)
 
 
-@api.route('/services/<service>/<version>/template', methods=['PUT'])
+@api.route('/products/<product>/<version>/template', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_service_template(service, version):
-    """Set the template needed to generate the required service resources"""
+def set_product_template(product, version):
+    """Set the template needed to generate the required product resources"""
     if request.headers['Content-Type'] == 'application/json':
         templatetype = 'json+jinja2'
     elif request.headers['Content-Type'] == 'application/yaml':
         templatetype = 'yaml+jinja2'
     data = request.get_data().decode('utf-8')
-    template = registry.get_service_template(service, version)
+    template = registry.get_product(product, version)
     template.template = data
     template.templatetype = templatetype
     return '', 204
 
 
-@api.route('/services/<service>/<version>/options', methods=['GET'])
+@api.route('/products/<product>/<version>/options', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_service_options(service, version):
-    """Get the options needed by the service template"""
-    service = registry.get_service_template(service, version)
-    options = service.options
+def get_product_options(product, version):
+    """Get the options needed by the product template"""
+    product = registry.get_product(product, version)
+    options = product.options
     return jsonify(options)
 
 
-@api.route('/services/<service>/<version>/options', methods=['PUT'])
+@api.route('/products/<product>/<version>/options', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_service_options(service, version):
-    """Set the options needed by the service template"""
+def set_product_options(product, version):
+    """Set the options needed by the product template"""
     data = request.get_data().decode('utf-8')
-    template = registry.get_service_template(service, version)
+    template = registry.get_product_template(product, version)
     template.options = data
     return '', 204
 
 
-@api.route('/services/<service>/<version>/orquestrator', methods=['GET'])
+@api.route('/products/<product>/<version>/orquestrator', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_service_orquestrator(service, version):
-    """Get the orquestrator needed to start the service once instantiated"""
-    service = registry.get_service_template(service, version)
-    orquestrator = service.orquestrator
+def get_product_orquestrator(product, version):
+    """Get the orquestrator needed to start the product once instantiated"""
+    product = registry.get_product_template(product, version)
+    orquestrator = product.orquestrator
     return jsonify(orquestrator)
 
 
-@api.route('/services/<service>/<version>/orquestrator', methods=['PUT'])
+@api.route('/products/<product>/<version>/orquestrator', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_service_orquestrator(service, version):
-    """Set the orquestrator needed to start the service once instantiated"""
+def set_product_orquestrator(product, version):
+    """Set the orquestrator needed to start the product once instantiated"""
     data = request.get_data().decode('utf-8')
-    template = registry.get_service_template(service, version)
+    template = registry.get_product_template(product, version)
     template.orquestrator = data
     return '', 204
 
 
-@api.route('/services/<service>/<version>', methods=['POST'])
+@api.route('/products/<product>/<version>', methods=['POST'])
 @restricted(role='ROLE_USER')
-def launch_service(service, version):
+def launch_product(product, version):
     """Launch a new cluster instance"""
     app.logger.info('Request to launch a new cluster instance from user {}'
                     .format(g.user))
     username = g.user
     options = request.get_json()
-    cluster = registry.instantiate(username, service, version, options)
+    cluster = registry.instantiate(username, product, version, options)
     clusterdn = str(cluster)
 
     for node in cluster.nodes:
@@ -141,75 +139,75 @@ def launch_service(service, version):
     return clusterdn, 200
 
 
-@api.route('/instances', methods=['GET'])
+@api.route('/clusters', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_all_instances():
-    app.logger.info('Request for all instances')
-    instances = registry.get_cluster_instances()
+def get_all_clusters():
+    app.logger.info('Request for all clusters')
+    clusters = registry.get_cluster_instances()
     return jsonify({
-        'instances': [utils.print_instance(instance, (None, None, None))
-                      for instance in instances]})
+        'clusters': [utils.print_instance(instance, (None, None, None))
+                     for instance in clusters]})
 
 
-@api.route('/instances/<username>', methods=['GET'])
+@api.route('/clusters/<username>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_user_instances(username):
-    app.logger.info('Request for instances of user {} '.format(username))
+def get_user_clusters(username):
+    app.logger.info('Request for clusters of user {} '.format(username))
 
-    instances = registry.get_cluster_instances(user=username)
+    clusters = registry.get_cluster_instances(user=username)
     return jsonify({
-        'instances': [utils.print_instance(instance, (username, None, None))
-                      for instance in instances]})
+        'clusters': [utils.print_instance(instance, (username, None, None))
+                      for instance in clusters]})
 
 
-@api.route('/instances/<username>/<service>', methods=['GET'])
+@api.route('/clusters/<username>/<service>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_user_service_instances(username, service):
-    app.logger.info('Request for instances of user {} and service {}'.format(username, service))
-    instances = registry.get_cluster_instances(username, service)
+def get_user_service_clusters(username, service):
+    app.logger.info('Request for clusters of user {} and service {}'.format(username, service))
+    clusters = registry.get_cluster_instances(username, service)
     return jsonify({
-        'instances': [utils.print_instance(instance, (username, service, None))
-                      for instance in instances]})
+        'clusters': [utils.print_instance(instance, (username, service, None))
+                      for instance in clusters]})
 
 
-@api.route('/instances/<username>/<service>/<version>', methods=['GET'])
+@api.route('/clusters/<username>/<service>/<version>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_user_service_version_instances(username, service, version):
-    app.logger.info('Request for instances of user {} and service {} with version {}'
+def get_user_service_version_clusters(username, service, version):
+    app.logger.info('Request for clusters of user {} and service {} with version {}'
                     .format(username, service, version))
-    instances = registry.get_cluster_instances(username, service, version)
+    clusters = registry.get_cluster_instances(username, service, version)
     return jsonify({
-        'instances': [utils.print_instance(instance, (username, service, version))
-                      for instance in instances]})
+        'clusters': [utils.print_instance(instance, (username, service, version))
+                      for instance in clusters]})
 
 
-@api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['GET'])
+@api.route('/clusters/<username>/<service>/<version>/<instanceid>', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_instance(username, service, version, instanceid):
-    instance = registry.get_cluster_instance(dn='/instances/{}/{}/{}/{}'
+    instance = registry.get_cluster_instance(dn='/clusters/{}/{}/{}/{}'
                                              .format(username, service, version, instanceid))
     return jsonify(utils.print_full_instance(instance))
 
 
-@api.route('/instances/<username>/<service>/<version>/<instanceid>/nodes', methods=['GET'])
+@api.route('/clusters/<username>/<service>/<version>/<instanceid>/nodes', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_instance_nodes(username, service, version, instanceid):
     app.logger.info('Request for instance nodes of user {} and service {} with '
                     'version {}'.format(username, service, version))
     instance = registry.get_cluster_instance(
-        dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
+        dn="/clusters/{}/{}/{}/{}".format(username, service, version, instanceid))
     return jsonify({'nodes': [node.to_JSON() for node in instance.nodes]})
 
 
-@api.route('/instances/<username>/<service>/<version>/<instanceid>/services', methods=['GET'])
+@api.route('/clusters/<username>/<service>/<version>/<instanceid>/services', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_instance_services(username, service, version, instanceid):
     instance = registry.get_cluster_instance(
-        dn="/instances/{}/{}/{}/{}".format(username, service, version, instanceid))
+        dn="/clusters/{}/{}/{}/{}".format(username, service, version, instanceid))
     return jsonify({'services': [s.to_JSON() for s in instance.services]})
 
 
-@api.route('/instances/<username>/<service>/<version>/<instanceid>', methods=['DELETE'])
+@api.route('/clusters/<username>/<service>/<version>/<instanceid>', methods=['DELETE'])
 @restricted(role='ROLE_USER')
 def destroy_instance(username, service, version, instanceid):
     # Remove from the mesos system
@@ -226,8 +224,3 @@ def destroy_instance(username, service, version, instanceid):
     # Remove from the kvstore
     # registry.deinstantiate(username, service, version, instanceid)
     return jsonify({"message": "success"}), 200
-
-@api.route('/test', methods=['GET'])
-@restricted(role='ROLE_USER')
-def echo_hello():
-    return jsonify({'message': 'Hello {}'.format(g.user)})
