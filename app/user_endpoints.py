@@ -1,16 +1,17 @@
-from flask import abort, jsonify, request, g
+from flask import abort, jsonify, request, g, url_for
 from . import api, app
 from . import utils
 import json
 import requests
 import registry
-from .decorators import restricted
+import kvstore
+from .decorators import restricted, asynchronous
 
 CONSUL_ENDPOINT = app.config.get('CONSUL_ENDPOINT')
 MESOS_FRAMEWORK_ENDPOINT = app.config.get('MESOS_FRAMEWORK_ENDPOINT')
 
-
 registry.connect(CONSUL_ENDPOINT)
+kv = kvstore.Client(CONSUL_ENDPOINT)
 
 
 @api.route('/products', methods=['POST'])
@@ -20,9 +21,14 @@ def register_product():
     if request.is_json:
         data = request.get_json()
         if utils.validate(data, required_fields=('name', 'version', 'description')):
-            template = registry.register(name=data["name"], version=data["version"],
-                                         description=data["description"])
-            return str(template), 200
+            name = data['name']
+            version = data['version']
+            description = data['description']
+            product = registry.register(name, version, description)
+            location = url_for('get_product', product=name, version=version,
+                               _external=True)
+            return jsonify({'status': 'registered', 'url': location}), 201, {
+                'Location': location}
     abort(400)
 
 
@@ -113,7 +119,8 @@ def set_product_orquestrator(product, version):
 
 @api.route('/products/<product>/<version>', methods=['POST'])
 @restricted(role='ROLE_USER')
-def launch_product(product, version):
+@asynchronous
+def launch_cluster(product, version):
     """Launch a new cluster instance"""
     app.logger.info('Request to launch a new cluster instance from user {}'
                     .format(g.user))
@@ -121,6 +128,7 @@ def launch_product(product, version):
     options = request.get_json()
     cluster = registry.instantiate(username, product, version, options)
     clusterdn = str(cluster)
+    id = registry.parse_id(clusterdn)
 
     for node in cluster.nodes:
         node.status = "submitted"
@@ -136,7 +144,9 @@ def launch_product(product, version):
     app.logger.info('Launching orquestrator thread')
     utils.launch_orquestrator_when_ready(clusterdn)
 
-    return clusterdn, 200
+    return jsonify({'status': 'running', 'clusterdn': clusterdn}), 201, {
+        'Location': url_for('get_cluster', username=username, product=product,
+                            version=version, id=id, _external=True)}
 
 
 @api.route('/clusters', methods=['GET'])
@@ -160,59 +170,59 @@ def get_user_clusters(username):
                       for instance in clusters]})
 
 
-@api.route('/clusters/<username>/<service>', methods=['GET'])
+@api.route('/clusters/<username>/<product>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_user_service_clusters(username, service):
-    app.logger.info('Request for clusters of user {} and service {}'.format(username, service))
-    clusters = registry.get_cluster_instances(username, service)
+def get_user_product_clusters(username, product):
+    app.logger.info('Request for clusters of user {} and service {}'.format(username, product))
+    clusters = registry.get_cluster_instances(username, product)
     return jsonify({
-        'clusters': [utils.print_instance(instance, (username, service, None))
+        'clusters': [utils.print_instance(instance, (username, product, None))
                       for instance in clusters]})
 
 
-@api.route('/clusters/<username>/<service>/<version>', methods=['GET'])
+@api.route('/clusters/<username>/<product>/<version>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_user_service_version_clusters(username, service, version):
+def get_user_product_version_clusters(username, product, version):
     app.logger.info('Request for clusters of user {} and service {} with version {}'
-                    .format(username, service, version))
-    clusters = registry.get_cluster_instances(username, service, version)
+                    .format(username, product, version))
+    clusters = registry.get_cluster_instances(username, product, version)
     return jsonify({
-        'clusters': [utils.print_instance(instance, (username, service, version))
+        'clusters': [utils.print_instance(instance, (username, product, version))
                       for instance in clusters]})
 
 
-@api.route('/clusters/<username>/<service>/<version>/<instanceid>', methods=['GET'])
+@api.route('/clusters/<username>/<product>/<version>/<id>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_instance(username, service, version, instanceid):
-    instance = registry.get_cluster_instance(dn='/clusters/{}/{}/{}/{}'
-                                             .format(username, service, version, instanceid))
-    return jsonify(utils.print_full_instance(instance))
+def get_cluster(username, product, version, id):
+    cluster = registry.get_cluster_instance(dn='/clusters/{}/{}/{}/{}'
+                                             .format(username, product, version, id))
+    return jsonify(utils.print_full_instance(cluster))
 
 
-@api.route('/clusters/<username>/<service>/<version>/<instanceid>/nodes', methods=['GET'])
+@api.route('/clusters/<username>/<product>/<version>/<id>/nodes', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_instance_nodes(username, service, version, instanceid):
+def get_cluster_nodes(username, product, version, id):
     app.logger.info('Request for instance nodes of user {} and service {} with '
-                    'version {}'.format(username, service, version))
-    instance = registry.get_cluster_instance(
-        dn="/clusters/{}/{}/{}/{}".format(username, service, version, instanceid))
-    return jsonify({'nodes': [node.to_JSON() for node in instance.nodes]})
+                    'version {}'.format(username, product, version))
+    cluster = registry.get_cluster_instance(
+        dn="/clusters/{}/{}/{}/{}".format(username, product, version, id))
+    return jsonify({'nodes': [node.to_JSON() for node in cluster.nodes]})
 
 
-@api.route('/clusters/<username>/<service>/<version>/<instanceid>/services', methods=['GET'])
+@api.route('/clusters/<username>/<product>/<version>/<id>/services', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_instance_services(username, service, version, instanceid):
-    instance = registry.get_cluster_instance(
-        dn="/clusters/{}/{}/{}/{}".format(username, service, version, instanceid))
-    return jsonify({'services': [s.to_JSON() for s in instance.services]})
+def get_cluster_services(username, product, version, id):
+    cluster = registry.get_cluster_instance(
+        dn="/clusters/{}/{}/{}/{}".format(username, product, version, id))
+    return jsonify({'services': [s.to_JSON() for s in cluster.services]})
 
 
-@api.route('/clusters/<username>/<service>/<version>/<instanceid>', methods=['DELETE'])
+@api.route('/clusters/<username>/<product>/<version>/<id>', methods=['DELETE'])
 @restricted(role='ROLE_USER')
-def destroy_instance(username, service, version, instanceid):
+def destroy_cluster(username, product, version, id):
     # Remove from the mesos system
-    instance = registry.get_cluster_instance(username, service, version, instanceid)
-    data = {"clusterdn": str(instance)}
+    cluster = registry.get_cluster_instance(username, product, version, id)
+    data = {"clusterdn": str(cluster)}
     data_json = json.dumps(data)
     headers = {'Content-type': 'application/json'}
     response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
@@ -222,5 +232,17 @@ def destroy_instance(username, service, version, instanceid):
         abort(500)
 
     # Remove from the kvstore
-    # registry.deinstantiate(username, service, version, instanceid)
+    # registry.deinstantiate(username, service, version, id)
     return jsonify({"message": "success"}), 200
+
+
+@api.route('/queue/<id>', methods=['GET'])
+def get_async_job_status(id):
+    """Get the status of an async request"""
+    status = kv.get('queue/{}/status'.format(id))
+    if status != 'pending':
+        url = kv.get('queue/{}/url'.format(id))
+        status = kv.get('queue/{}/status'.format(id))
+        return (jsonify({'status': status, 'url': url}), 303,
+                {'Location': url})
+    return jsonify({'status': 'pending'}), 200
