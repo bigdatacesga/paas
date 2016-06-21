@@ -4,8 +4,7 @@ import time
 import requests
 from . import app
 
-ORQUESTRATOR_ENDPOINT = 'http://orquestrator/v1/clusters'
-
+ORQUESTRATOR_ENDPOINT = app.config.get('ORQUESTRATOR_ENDPOINT')
 
 def validate(data, required_fields):
     """Validate if all required_fields are in the given data dictionary"""
