@@ -6,6 +6,7 @@ from . import app
 
 ORQUESTRATOR_ENDPOINT = app.config.get('ORQUESTRATOR_ENDPOINT')
 
+
 def validate(data, required_fields):
     """Validate if all required_fields are in the given data dictionary"""
     if all(field in data for field in required_fields):
@@ -63,10 +64,12 @@ def launch_orquestrator_when_ready(clusterdn):
     clusterid = registry.id_from(clusterdn)
 
     def orquestrate_when_cluster_is_ready():
+        # TODO Use a blocking kv query to have inmediate notification
         while cluster.status != 'executing':
             time.sleep(5)
         app.logger.info('Cluster ready: launching orquestrator')
-        requests.post('{}/{}'.format(ORQUESTRATOR_ENDPOINT, clusterid))
+        # FIXME Uncomment to call the orquestrator service
+        #requests.put('{}/{}'.format(ORQUESTRATOR_ENDPOINT, clusterid))
 
     t = threading.Thread(target=orquestrate_when_cluster_is_ready)
     t.daemon = True

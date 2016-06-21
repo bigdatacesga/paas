@@ -131,7 +131,8 @@ def launch_service(service, version):
     data = {"clusterdn": clusterdn}
     response = requests.post(MESOS_FRAMEWORK_ENDPOINT, json=data)
     if response.status_code != 200:
-        app.logger.error('Mesos framework error: {}'.format(response))
+        app.logger.error('Mesos framework returned {}'.format(response.status_code))
+        app.logger.error('{}'.format(response.json()))
         abort(500)
 
     app.logger.info('Launching orquestrator thread')
@@ -219,7 +220,7 @@ def destroy_instance(username, service, version, instanceid):
     response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
                                headers=headers)
     if response.status_code != 200:
-        app.logger.error('Mesos framework error: {}'.format(response))
+        app.logger.error('Mesos framework error: {}'.format(response.error))
         abort(500)
 
     # Remove from the kvstore

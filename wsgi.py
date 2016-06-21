@@ -1,21 +1,34 @@
 #!/usr/bin/env python
 import sys
-from app import app
+from app import app as application
 import logging
 
-application = app
 
-handler = logging.StreamHandler(sys.stdout)
-#handler = logging.FileHandler('./application.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter(
-    '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s '
-))
-app.logger.addHandler(handler)
-# fix gives access to the gunicorn error log facility
-app.logger.handlers.extend(logging.getLogger("gunicorn.error").handlers)
-# fix gives access to the gunicorn console log facility
-app.logger.handlers.extend(logging.getLogger("gunicorn").handlers)
+def setup_flask_logging():
+    # Log to stdout
+    #handler = logging.StreamHandler(sys.stdout)
+    # Log to a file
+    handler = logging.FileHandler('./application.log')
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s '
+    ))
+    application.logger.addHandler(handler)
+
+
+def setup_gunicorn_logging():
+    # fix gives access to the gunicorn error log facility
+    application.logger.handlers.extend(logging.getLogger("gunicorn.error").handlers)
+    # fix gives access to the gunicorn console log facility
+    application.logger.handlers.extend(logging.getLogger("gunicorn").handlers)
+
+
+# Set default log level for the general logger
+# each handler can then restrict the messages logged
+application.logger.setLevel(logging.INFO)
+setup_flask_logging()
+#setup_gunicorn_logging()
+
 
 if __name__ == '__main__':
-    application.run(host='127.0.0.1', port=5000)
+    application.run()

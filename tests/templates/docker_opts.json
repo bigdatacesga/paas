@@ -1,0 +1,29 @@
+{% set comma = joiner(",") %}
+{
+  "nodes": {
+      {% for n in range(0, opts['size']) %}
+      {{ comma() }} "example{{ n }}": {
+          "docker_image": "docker-registry.cesga.es:5000/centos-base:7.1-20160527",
+          "docker_opts": "--priveleged",
+          "port": "22",
+          "cpu": 1,
+          "mem": 4096,
+          "disks": { 
+              "disk4": { "destination": "/storage" },
+              "disk5": { "destination": "/var" } 
+          },
+          "networks": {
+              "eth0": { "type": "dynamic", "networkname": "admin" },
+              "eth1": { "type": "dynamic", "networkname": "storage" }
+          }
+      }
+      {% endfor %}
+  },
+  "services": {
+      "service1": {
+          "nodes": [{% set comma = joiner(",") %}{% for n in range(0, opts['size']) %}{{ comma() }}"example{{ n }}"{% endfor %}]
+      }
+  },
+  "dnsname": "{{ clusterid }}"
+}
+
