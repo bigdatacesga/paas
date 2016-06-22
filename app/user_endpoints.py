@@ -25,10 +25,9 @@ def register_product():
             version = data['version']
             description = data['description']
             product = registry.register(name, version, description)
-            location = url_for('get_product', product=name, version=version,
+            location = url_for('api.get_product', product=name, version=version,
                                _external=True)
-            return jsonify({'status': 'registered', 'url': location}), 201, {
-                'Location': location}
+            return '', 201, {'Location': location}
     abort(400)
 
 
@@ -119,7 +118,7 @@ def set_product_orquestrator(product, version):
 
 @api.route('/products/<product>/<version>', methods=['POST'])
 @restricted(role='ROLE_USER')
-@asynchronous
+# @asynchronous
 def launch_cluster(product, version):
     """Launch a new cluster instance"""
     app.logger.info('Request to launch a new cluster instance from user {}'
@@ -127,8 +126,8 @@ def launch_cluster(product, version):
     username = g.user
     options = request.get_json()
     cluster = registry.instantiate(username, product, version, options)
-    clusterdn = str(cluster)
-    id = registry.parse_id(clusterdn)
+    clusterdn = cluster.dn
+    id = cluster.name
 
     for node in cluster.nodes:
         node.status = "submitted"
@@ -144,8 +143,8 @@ def launch_cluster(product, version):
     app.logger.info('Launching orquestrator thread')
     utils.launch_orquestrator_when_ready(clusterdn)
 
-    return jsonify({'status': 'running', 'clusterdn': clusterdn}), 201, {
-        'Location': url_for('get_cluster', username=username, product=product,
+    return '', 201, {
+        'Location': url_for('api.get_cluster', username=username, product=product,
                             version=version, id=id, _external=True)}
 
 
@@ -153,7 +152,7 @@ def launch_cluster(product, version):
 @restricted(role='ROLE_USER')
 def get_all_clusters():
     app.logger.info('Request for all clusters')
-    clusters = registry.get_cluster_instances()
+    clusters = registry.query_clusters()
     return jsonify({
         'clusters': [utils.print_instance(instance, (None, None, None))
                      for instance in clusters]})
@@ -164,7 +163,7 @@ def get_all_clusters():
 def get_user_clusters(username):
     app.logger.info('Request for clusters of user {} '.format(username))
 
-    clusters = registry.get_cluster_instances(user=username)
+    clusters = registry.query_clusters(user=username)
     return jsonify({
         'clusters': [utils.print_instance(instance, (username, None, None))
                       for instance in clusters]})
@@ -174,7 +173,7 @@ def get_user_clusters(username):
 @restricted(role='ROLE_USER')
 def get_user_product_clusters(username, product):
     app.logger.info('Request for clusters of user {} and service {}'.format(username, product))
-    clusters = registry.get_cluster_instances(username, product)
+    clusters = registry.query_clusters(username, product)
     return jsonify({
         'clusters': [utils.print_instance(instance, (username, product, None))
                       for instance in clusters]})
@@ -185,7 +184,7 @@ def get_user_product_clusters(username, product):
 def get_user_product_version_clusters(username, product, version):
     app.logger.info('Request for clusters of user {} and service {} with version {}'
                     .format(username, product, version))
-    clusters = registry.get_cluster_instances(username, product, version)
+    clusters = registry.query_clusters(username, product, version)
     return jsonify({
         'clusters': [utils.print_instance(instance, (username, product, version))
                       for instance in clusters]})
@@ -194,7 +193,7 @@ def get_user_product_version_clusters(username, product, version):
 @api.route('/clusters/<username>/<product>/<version>/<id>', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_cluster(username, product, version, id):
-    cluster = registry.get_cluster_instance(dn='/clusters/{}/{}/{}/{}'
+    cluster = registry.get_cluster(dn='/clusters/{}/{}/{}/{}'
                                              .format(username, product, version, id))
     return jsonify(utils.print_full_instance(cluster))
 
@@ -204,7 +203,7 @@ def get_cluster(username, product, version, id):
 def get_cluster_nodes(username, product, version, id):
     app.logger.info('Request for instance nodes of user {} and service {} with '
                     'version {}'.format(username, product, version))
-    cluster = registry.get_cluster_instance(
+    cluster = registry.get_cluster(
         dn="/clusters/{}/{}/{}/{}".format(username, product, version, id))
     return jsonify({'nodes': [node.to_JSON() for node in cluster.nodes]})
 
@@ -212,7 +211,7 @@ def get_cluster_nodes(username, product, version, id):
 @api.route('/clusters/<username>/<product>/<version>/<id>/services', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_cluster_services(username, product, version, id):
-    cluster = registry.get_cluster_instance(
+    cluster = registry.get_cluster(
         dn="/clusters/{}/{}/{}/{}".format(username, product, version, id))
     return jsonify({'services': [s.to_JSON() for s in cluster.services]})
 
@@ -221,8 +220,8 @@ def get_cluster_services(username, product, version, id):
 @restricted(role='ROLE_USER')
 def destroy_cluster(username, product, version, id):
     # Remove from the mesos system
-    cluster = registry.get_cluster_instance(username, product, version, id)
-    data = {"clusterdn": str(cluster)}
+    cluster = registry.get_cluster(username, product, version, id)
+    data = {"clusterdn": cluster.dn}
     data_json = json.dumps(data)
     headers = {'Content-type': 'application/json'}
     response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
