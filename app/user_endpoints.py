@@ -221,13 +221,9 @@ def get_cluster_services(username, product, version, id):
 def destroy_cluster(username, product, version, id):
     # Remove from the mesos system
     cluster = registry.get_cluster(username, product, version, id)
-    data = {"clusterdn": cluster.dn}
-    data_json = json.dumps(data)
-    headers = {'Content-type': 'application/json'}
-    response = requests.delete(MESOS_FRAMEWORK_ENDPOINT, data=data_json,
-                               headers=headers)
-    if response.status_code != 200:
-        app.logger.error('Mesos framework error: {}'.format(response.error))
+    response = requests.delete('{}/{}'.format(MESOS_FRAMEWORK_ENDPOINT, registry.id_from(cluster.dn)))
+    if response.status_code != 204:
+        app.logger.error('Mesos framework error. Response: {}'.format(response))
         abort(500)
 
     # Remove from the kvstore
