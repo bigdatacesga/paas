@@ -1,5 +1,6 @@
 {% set comma = joiner(",") %}
 {
+  "dnsname": "{{ clusterid }}",
   "nodes": {
       {% for n in range(0, opts['size']) %}
       {{ comma() }} "example{{ n }}": {
@@ -23,7 +24,6 @@
       "service1": {
           "nodes": [{% set comma = joiner(",") %}{% for n in range(0, opts['size']) %}{{ comma() }}"example{{ n }}"{% endfor %}]
       }
-  },
-  "dnsname": "{{ clusterid }}"
+  }
 }
 

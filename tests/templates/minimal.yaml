@@ -1,0 +1,22 @@
+dnsname: {{ clusterid }}
+nodes:
+  {% for n in range(0, opts['size']) %}
+  example{{ n }}:
+    docker_image: centos:7.1.1503
+    cpu: 1
+    mem: 4096
+    disks:
+      disk4: {destination: /storage1}
+      disk5: {destination: /storage2} 
+      networks:
+        eth0: {type: dynamic, networkname: admin}
+        eth1: {type: dynamic, networkname: storage}
+  {% endfor %}
+
+  services:
+    service1:
+      nodes: 
+        {% for n in range(0, opts['size']) %}
+        - example{{ n }}
+        {% endfor %}
+

@@ -1,0 +1,3 @@
+
+# Gluster
+10.117.244.1:/distributed-replicated-volume-0  /mnt/gluster/drv0            glusterfs  defaults,_netdev 0 0

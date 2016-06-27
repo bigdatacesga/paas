@@ -92,7 +92,7 @@ def get_product_options(product, version):
 def set_product_options(product, version):
     """Set the options needed by the product template"""
     data = request.get_data().decode('utf-8')
-    template = registry.get_product_template(product, version)
+    template = registry.get_product(product, version)
     template.options = data
     return '', 204
 
@@ -101,7 +101,7 @@ def set_product_options(product, version):
 @restricted(role='ROLE_USER')
 def get_product_orquestrator(product, version):
     """Get the orquestrator needed to start the product once instantiated"""
-    product = registry.get_product_template(product, version)
+    product = registry.get_product(product, version)
     orquestrator = product.orquestrator
     return jsonify(orquestrator)
 
@@ -111,7 +111,7 @@ def get_product_orquestrator(product, version):
 def set_product_orquestrator(product, version):
     """Set the orquestrator needed to start the product once instantiated"""
     data = request.get_data().decode('utf-8')
-    template = registry.get_product_template(product, version)
+    template = registry.get_product(product, version)
     template.orquestrator = data
     return '', 204
 

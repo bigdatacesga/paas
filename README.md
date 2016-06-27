@@ -39,7 +39,7 @@ curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services/cdh/5.7.2 -d '{"slave
 
 Registering services
 --------------------
-### POST /services
+### POST /products
 
   {
     "name": "cdh",
@@ -47,15 +47,19 @@ Registering services
     "description": "Hadoop cluster based on Cloudera CDH 5.7.0",
   }
 
-curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services -d '{"name":"gluster", "version":"3.7.11", "description": "GlusterFS parallel filesystem cluster"}' -H "Content-type: application/json"
+```
+http POST http://127.0.0.1:5000/bigdata/api/v1/products name=reference version=1.0.0 description='Reference product: minimal'
+curl -X POST http://127.0.0.1:5000/bigdata/api/v1/products -d '{"name":"gluster", "version":"3.7.11", "description": "GlusterFS parallel filesystem cluster"}' -H "Content-type: application/json"
+```
 
-### PUT /services/<name>/<version>/template
+
+### PUT /products/<name>/<version>/template
 
   jinja2 json template: eg. see service-template.json in configuration-registry module
 
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/template --data-binary @service-template.json -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0/template --data-binary @minimal.json -H "Content-type: application/json"
 
-### PUT /services/<name>/<version>/options
+### PUT /products/<name>/<version>/options
 
   {
     "required": {
@@ -78,10 +82,12 @@ curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/templat
     }
   }
 
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/options --data-binary @options.json -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/products/gluster/3.7.11/options --data-binary @options.json -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0/options --data-binary @options/size.json -H "Content-type: application/json"
 
-### PUT /services/<name>/<version>/orquestrator
+### PUT /products/<name>/<version>/orquestrator
 
     data -> orquestrator script to call to start the service
 
-curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11/orquestrator --data-binary @orquestrator.py -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/products/gluster/3.7.11/orquestrator --data-binary @orquestrator.py -H "Content-type: application/json"
+curl -X PUT http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0/orquestrator --data-binary @orquestrators/minimal/fabfile.py -H "Content-type: application/json"

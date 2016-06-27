@@ -8,6 +8,6 @@ SECRET_KEYS = '/etc/keyczar/keys'
 DEBUG = True
 IGNORE_AUTH = False
 # SECRET_KEY = 'admin'
-MESOS_FRAMEWORK_ENDPOINT = 'http://mesos_framework:5000/bigdata/mesos_framework/v1/clusters'
+MESOS_FRAMEWORK_ENDPOINT = 'http://framework:5000/bigdata/mesos_framework/v1/clusters'
 ORQUESTRATOR_ENDPOINT = 'http://orquestrator:5005/orquestrator/v1/clusters'
 CONSUL_ENDPOINT = 'http://consul:8500/v1/kv'

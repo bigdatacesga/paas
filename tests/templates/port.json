@@ -4,16 +4,16 @@
   "nodes": {
       {% for n in range(0, opts['size']) %}
       {{ comma() }} "example{{ n }}": {
-          "docker_image": "centos:7.1.1503",
+          "docker_image": "docker-registry.cesga.es:5000/centos-base:7.1-20160527",
+          "docker_opts": "--priveleged",
+          "port": "22",
           "cpu": 1,
           "mem": 4096,
           "disks": { 
-              "disk4": { "destination": "/storage1" },
-              "disk5": { "destination": "/storage2" } 
+              "disk4": { "destination": "/storage" }
           },
           "networks": {
-              "eth0": { "type": "dynamic", "networkname": "admin" },
-              "eth1": { "type": "dynamic", "networkname": "storage" }
+              "eth0": { "type": "dynamic", "networkname": "admin" }
           }
       }
       {% endfor %}

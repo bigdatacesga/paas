@@ -1,0 +1,12 @@
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::0	ip6-localnet
+ff00::0	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+
+# Gluster
+10.117.244.1 gluster1
+10.117.244.2 gluster2
+10.117.244.3 gluster3
+10.117.244.4 gluster4

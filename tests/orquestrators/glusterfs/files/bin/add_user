@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# encoding: utf-8
+#
+# Author: JLC
+# Changelog
+#   05-10-2015 JLC
+#     First version
+#
+"""Add a given user to the Hadoop pilot infrastructure
+
+Usage:
+    add_user.py <username>
+
+These module contains the functions needed for:
+ - Creating the HOME directory
+ - Creating the HDFS directory
+
+NOTE: The module will look for the LDAP entry of the given user
+so it is needed that the user is first added to ldap
+"""
+
+import ldap
+from os.path import exists
+from os import makedirs, chown
+from subprocess import call, check_call, CalledProcessError
+import argparse
+
+LDAPSERVER = 'ldap://ldap-sis.cesga.es'
+LDAPUSER = 'cn=administrator,dc=cesga,dc=es'
+LDAPPASSWORD = 'hpinvent'
+
+
+def create_homedir(home, uid, gid):
+    """Create empty home directory"""
+    if not exists(home):
+        makedirs(home)
+        chown(home, uid, gid)
+
+
+def create_homedir_with_skel(username):
+    """Create home directory and populate it with the contents of the skel directory"""
+    call(['mkhomedir_helper', username])
+
+
+def exists_hdfs_dir(dir):
+    """Check if a HDFS directory exists"""
+    try:
+        check_call("su - hadoop -c 'hadoop fs -test -d " + dir + "'", shell=True)
+        return True
+    except CalledProcessError:
+        return False
+
+
+def create_hdfs_home(username):
+    """Create HDFS home directory"""
+    hdfs_home = '/user/' + username
+    if not exists_hdfs_dir(hdfs_home):
+        call("su - hadoop -c 'hadoop fs -mkdir " + hdfs_home + "'", shell=True)
+        usergroup = username + ':' + username
+        call("su - hadoop -c 'hadoop fs -chown " + usergroup + " " + hdfs_home + "'", shell=True)
+    else:
+        print 'Warning: User was already registered in HDFS'
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Increase verbosity')
+    parser.add_argument('username',
+                        help='Name of the user as registered in LDAP')
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    username = args.username
+
+    l = ldap.initialize(LDAPSERVER)
+    try:
+        l.simple_bind_s(LDAPUSER, LDAPPASSWORD)
+    except ldap.LDAPError as e:
+        exit('LDAP bind failed: {}'.format(e))
+
+    records = l.search_s(
+        'uid={0},ou=usershpc,ou=users,dc=cesga,dc=es'.format(username),
+        ldap.SCOPE_SUBTREE, '(objectClass=posixAccount)',
+        ['uid', 'uidNumber', 'gidNumber', 'homeDirectory'])
+
+    for dn, entry in records:
+        print 'Adding user according to the following ldap entry:'
+        print dn
+        print repr(entry)
+        username = entry['uid'][0]
+        #create_homedir(entry['homeDirectory'][0], entry['uidNumber'][0], entry['gidNumber'][0])
+        create_homedir_with_skel(username)
+        create_hdfs_home(username)
+
+if __name__ == '__main__':
+    main()
+
+
