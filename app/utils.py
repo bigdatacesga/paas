@@ -51,8 +51,8 @@ def print_instance(instance, filters):
     try:
         return {
             "result": "success",
-            # FIXME we have to return the full uri so that the interface 
-            # works, plus the "instances" part of the uri has to be 
+            # FIXME we have to return the full uri so that the interface
+            # works, plus the "instances" part of the uri has to be
             # replaced by "clusters" so that it matches the endpoint
             "uri": str(instance.dn).replace("instances", "clusters"),
             "data": {
@@ -80,7 +80,7 @@ def launch_orquestrator_when_ready(clusterdn):
             time.sleep(5)
         app.logger.info('Cluster ready: launching orquestrator')
         # FIXME Uncomment to call the orquestrator service
-        requests.put('{}/{}'.format(ORQUESTRATOR_ENDPOINT, clusterid))
+        #requests.put('{}/{}'.format(ORQUESTRATOR_ENDPOINT, clusterid))
 
     t = threading.Thread(target=orquestrate_when_cluster_is_ready)
     t.daemon = True

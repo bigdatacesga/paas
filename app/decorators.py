@@ -152,7 +152,8 @@ def asynchronous(f):
 
         job = threading.Thread(target=job)
         job.start()
-        return jsonify({}), 202, {
-            'Location': url_for('api.get_async_job_status', id=id)}
+        location = url_for('api.get_async_job_status', id=id, _external=True)
+        return jsonify({'url': location}), 202, {
+            'Location': location}
 
     return decorator

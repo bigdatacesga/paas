@@ -1,6 +1,30 @@
 Big Data PaaS REST API
 ======================
 
+Introduction
+------------
+The Big Data PaaS API has been designed using a microservices architecture which simplifies its deployment and allows for better scalability.
+
+Different services take care of registration, provisioning, scheduling and configuration.
+
+Terminology
+-----------
+The following terms are used through the platform:
+
+- Solutions: reserved for future use in a SaaS platform,
+             eg. machine learning, data analysis dashboard
+
+- Products: PaaS offers products,
+            eg. CDH, mongodb, slurm
+
+- Clusters: A given product is instantiated in a cluster which contains:
+
+    - Nodes: each docker container of a cluster
+
+    - Services: configuration specific for a service that will be applied
+                to a given group of nodes that run the service
+
+
 Installation
 ------------
 
@@ -10,18 +34,17 @@ Installation
     python wsgi.py
 
 
-The Big Data PaaS API has been designed using a microservices architecture which simplifies its deployment and allows for better scalability.
-Different services are involved for registration, provisioning, scheduling and configuration.
-
 Test with:
 
 ```
-curl -H "Content-type: application/json" -X POST -d '{"size": 2, "disks": 2}' http://127.0.0.1:5000/bigdata/api/v1/services/gluster/3.7.11
+curl -H "Content-type: application/json" -X POST -d '{"size": 2}' http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0
+----
+http POST http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0 size:=2
 ```
 
-Tracking instance status
-------------------------
-The status of a given instance can be tracked using instance.status:
+Tracking cluster status
+-----------------------
+The status of a given cluster can be tracked using cluster.status:
 
     prepared
     submitted
@@ -30,14 +53,25 @@ The status of a given instance can be tracked using instance.status:
     running
 
 
-Launching instances
---------------------
+Launching clusters
+------------------
 
-curl -X POST http://127.0.0.1:5000/bigdata/api/v1/services/cdh/5.7.2 -d '{"slaves.number": 3}' -H "Content-type: application/json"
+### POST /products/<name>/<version>
+  {
+    "size": "2"
+  }
 
+```
+curl -H "Content-type: application/json" -X POST -d '{"size": 2}' http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0
+----
+http POST http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0 size:=2
+```
 
+The required options are defined in the corresponding product options:
 
-Registering services
+    curl http://127.0.0.1:5000/bigdata/api/v1/products/reference/1.0.0/options
+
+Registering products
 --------------------
 ### POST /products
 

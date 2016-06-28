@@ -83,8 +83,8 @@ def set_product_template(product, version):
 def get_product_options(product, version):
     """Get the options needed by the product template"""
     product = registry.get_product(product, version)
-    options = product.options
-    return jsonify(json.loads(options))
+    options = json.loads(product.options)
+    return jsonify(options)
 
 
 @api.route('/products/<product>/<version>/options', methods=['PUT'])
@@ -117,8 +117,8 @@ def set_product_orquestrator(product, version):
 
 
 @api.route('/products/<product>/<version>', methods=['POST'])
+@asynchronous
 @restricted(role='ROLE_USER')
-# @asynchronous
 def launch_cluster(product, version):
     """Launch a new cluster instance"""
     app.logger.info('Request to launch a new cluster instance from user {}'
@@ -193,7 +193,7 @@ def get_user_product_version_clusters(username, product, version):
 @api.route('/clusters/<username>/<product>/<version>/<id>', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_cluster(username, product, version, id):
-    cluster = registry.get_cluster(user=username, service=product, flavour=version, id=id)
+    cluster = registry.get_cluster(username, product, version, id)
     return jsonify(utils.print_full_instance(cluster))
 
 
@@ -202,14 +202,14 @@ def get_cluster(username, product, version, id):
 def get_cluster_nodes(username, product, version, id):
     app.logger.info('Request for instance nodes of user {} and service {} with '
                     'version {}'.format(username, product, version))
-    cluster = registry.get_cluster(user=username, service=product, flavour=version, id=id)
+    cluster = registry.get_cluster(username, product, version, id)
     return jsonify({'nodes': [node.to_dict() for node in cluster.nodes]})
 
 
 @api.route('/clusters/<username>/<product>/<version>/<id>/services', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_cluster_services(username, product, version, id):
-    cluster = registry.get_cluster(user=username, service=product, flavour=version, id=id)
+    cluster = registry.get_cluster(username, product, version, id)
     return jsonify({'services': [s.to_dict() for s in cluster.services]})
 
 
