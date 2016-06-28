@@ -84,7 +84,7 @@ def get_product_options(product, version):
     """Get the options needed by the product template"""
     product = registry.get_product(product, version)
     options = product.options
-    return jsonify(options)
+    return jsonify(json.loads(options))
 
 
 @api.route('/products/<product>/<version>/options', methods=['PUT'])
@@ -193,8 +193,7 @@ def get_user_product_version_clusters(username, product, version):
 @api.route('/clusters/<username>/<product>/<version>/<id>', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_cluster(username, product, version, id):
-    cluster = registry.get_cluster(dn='/clusters/{}/{}/{}/{}'
-                                             .format(username, product, version, id))
+    cluster = registry.get_cluster(user=username, service=product, flavour=version, id=id)
     return jsonify(utils.print_full_instance(cluster))
 
 
@@ -203,17 +202,15 @@ def get_cluster(username, product, version, id):
 def get_cluster_nodes(username, product, version, id):
     app.logger.info('Request for instance nodes of user {} and service {} with '
                     'version {}'.format(username, product, version))
-    cluster = registry.get_cluster(
-        dn="/clusters/{}/{}/{}/{}".format(username, product, version, id))
-    return jsonify({'nodes': [node.to_JSON() for node in cluster.nodes]})
+    cluster = registry.get_cluster(user=username, service=product, flavour=version, id=id)
+    return jsonify({'nodes': [node.to_dict() for node in cluster.nodes]})
 
 
 @api.route('/clusters/<username>/<product>/<version>/<id>/services', methods=['GET'])
 @restricted(role='ROLE_USER')
 def get_cluster_services(username, product, version, id):
-    cluster = registry.get_cluster(
-        dn="/clusters/{}/{}/{}/{}".format(username, product, version, id))
-    return jsonify({'services': [s.to_JSON() for s in cluster.services]})
+    cluster = registry.get_cluster(user=username, service=product, flavour=version, id=id)
+    return jsonify({'services': [s.to_dict() for s in cluster.services]})
 
 
 @api.route('/clusters/<username>/<product>/<version>/<id>', methods=['DELETE'])
