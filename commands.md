@@ -1,6 +1,6 @@
 ### Authentication
 ```
-curl -X POST https://hadoop.cesga.es/cloud/api/authenticate --data 'username=uscfajlc&password=XXXXX'
+curl -X POST https://hadoop.cesga.es/api/authenticate --data 'username=uscfajlc&password=XXXXX'
 export TOKEN='<TOKEN>'
 export AUTH="x-auth-token: $TOKEN"
 # curl
