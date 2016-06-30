@@ -46,12 +46,20 @@ Tracking cluster status
 -----------------------
 The status of a given cluster can be tracked using cluster.status:
 
-    prepared
-    submitted
-    queued
-    scheduled
-    running
 
+    registered: the cluster instance has been registered in the registry
+    scheduling: the scheduler (Mesos) is trying to allocate resources for the cluster
+    scheduled: the scheduler has finished allocating resources and the executors have started
+    configuring: the orchestrator is configuring the cluster
+    configured: the orchestrator has finished configuring the cluster
+    ready: the cluster is ready
+    destroyed: the cluster has been destroyed
+
+Each microservice manages its own set of status:
+
+    registry:     ----------  -> registered
+    framework:    scheduling  -> scheduled
+    orchestrator: configuring -> configured
 
 Launching clusters
 ------------------

@@ -35,15 +35,15 @@ def register_product():
 @restricted(role='ROLE_USER')
 def get_products():
     """Get the current list of registered products"""
-    products = registry.get_products()
-    return jsonify({'products': products})
+    products = registry.query_products()
+    return jsonify({'products': [p.name for p in products]})
 
 
 @api.route('/products/<product>', methods=['GET'])
 def get_product_versions(product):
     """Get the available versions of a produt"""
-    versions = registry.get_product_versions(product)
-    return jsonify({'versions': versions})
+    products = registry.query_products(product=product)
+    return jsonify({'versions': [p.version for p in products]})
 
 
 @api.route('/products/<product>/<version>', methods=['GET'])
@@ -97,22 +97,22 @@ def set_product_options(product, version):
     return '', 204
 
 
-@api.route('/products/<product>/<version>/orquestrator', methods=['GET'])
+@api.route('/products/<product>/<version>/orchestrator', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_product_orquestrator(product, version):
-    """Get the orquestrator needed to start the product once instantiated"""
+def get_product_orchestrator(product, version):
+    """Get the orchestrator needed to start the product once instantiated"""
     product = registry.get_product(product, version)
-    orquestrator = product.orquestrator
-    return jsonify(orquestrator)
+    orchestrator = product.orchestrator
+    return jsonify(orchestrator)
 
 
-@api.route('/products/<product>/<version>/orquestrator', methods=['PUT'])
+@api.route('/products/<product>/<version>/orchestrator', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_product_orquestrator(product, version):
-    """Set the orquestrator needed to start the product once instantiated"""
+def set_product_orchestrator(product, version):
+    """Set the orchestrator needed to start the product once instantiated"""
     data = request.get_data().decode('utf-8')
     template = registry.get_product(product, version)
-    template.orquestrator = data
+    template.orchestrator = data
     return '', 204
 
 
@@ -125,23 +125,25 @@ def launch_cluster(product, version):
                     .format(g.user))
     username = g.user
     options = request.get_json()
+
+    app.logger.info('Registering the cluster instance in the registry')
     cluster = registry.instantiate(username, product, version, options)
     clusterdn = cluster.dn
+    # cluster.name has the ID number of the cluster: eg. 6
     id = cluster.name
+    cluster.status = 'registered'
 
-    for node in cluster.nodes:
-        node.status = "submitted"
 
     app.logger.info('Submitting cluster instance to Mesos')
-    data = {"clusterdn": clusterdn}
+    data = {'clusterdn': clusterdn}
     response = requests.post(MESOS_FRAMEWORK_ENDPOINT, json=data)
     if response.status_code != 200:
         app.logger.error('Mesos framework returned {}'.format(response.status_code))
         app.logger.error('{}'.format(response.json()))
         abort(500)
 
-    app.logger.info('Launching orquestrator thread')
-    utils.launch_orquestrator_when_ready(clusterdn)
+    app.logger.info('Launching orchestrator thread')
+    utils.launch_orchestrator_when_ready(clusterdn)
 
     return '', 201, {
         'Location': url_for('api.get_cluster', username=username, product=product,
@@ -229,6 +231,7 @@ def destroy_cluster(username, product, version, id):
 
 
 @api.route('/queue/<id>', methods=['GET'])
+@restricted(role='ROLE_USER')
 def get_async_job_status(id):
     """Get the status of an async request"""
     status = kv.get('queue/{}/status'.format(id))
