@@ -35,8 +35,8 @@ def register_product():
 @restricted(role='ROLE_USER')
 def get_products():
     """Get the current list of registered products"""
-    products = registry.query_products()
-    return jsonify({'products': [p.name for p in products]})
+    products = registry.query_products() or list()
+    return jsonify({'products': list(set([p.name for p in products]))})
 
 
 @api.route('/products/<product>', methods=['GET'])
@@ -154,7 +154,7 @@ def launch_cluster(product, version):
 @restricted(role='ROLE_USER')
 def get_all_clusters():
     app.logger.info('Request for all clusters')
-    clusters = registry.query_clusters()
+    clusters = registry.query_clusters()  or list()
     return jsonify({
         'clusters': [utils.print_instance(instance, (None, None, None))
                      for instance in clusters]})
@@ -165,7 +165,7 @@ def get_all_clusters():
 def get_user_clusters(username):
     app.logger.info('Request for clusters of user {} '.format(username))
 
-    clusters = registry.query_clusters(user=username)
+    clusters = registry.query_clusters(user=username) or list()
     return jsonify({
         'clusters': [utils.print_instance(instance, (username, None, None))
                       for instance in clusters]})
@@ -175,7 +175,7 @@ def get_user_clusters(username):
 @restricted(role='ROLE_USER')
 def get_user_product_clusters(username, product):
     app.logger.info('Request for clusters of user {} and service {}'.format(username, product))
-    clusters = registry.query_clusters(username, product)
+    clusters = registry.query_clusters(username, product) or list()
     return jsonify({
         'clusters': [utils.print_instance(instance, (username, product, None))
                       for instance in clusters]})
@@ -186,7 +186,7 @@ def get_user_product_clusters(username, product):
 def get_user_product_version_clusters(username, product, version):
     app.logger.info('Request for clusters of user {} and service {} with version {}'
                     .format(username, product, version))
-    clusters = registry.query_clusters(username, product, version)
+    clusters = registry.query_clusters(username, product, version)  or list()
     return jsonify({
         'clusters': [utils.print_instance(instance, (username, product, version))
                       for instance in clusters]})
