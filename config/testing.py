@@ -9,5 +9,5 @@ DEBUG = True
 IGNORE_AUTH = False
 # SECRET_KEY = 'admin'
 MESOS_FRAMEWORK_ENDPOINT = 'http://framework:5000/bigdata/mesos_framework/v1/clusters'
-ORCHESTRATOR_ENDPOINT = 'http://orchestrator:5002/v1/clusters'
+ORCHESTRATOR_ENDPOINT = 'http://orchestrator:6002/v1/clusters'
 CONSUL_ENDPOINT = 'http://consul:8500/v1/kv'
