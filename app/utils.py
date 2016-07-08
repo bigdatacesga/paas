@@ -78,12 +78,9 @@ def launch_orchestrator_when_ready(clusterdn):
         # TODO Use a blocking kv query to have inmediate notification
         while cluster.status != 'scheduled':
             time.sleep(5)
-        app.logger.info('Cluster ready: launching orchestrator')
+        app.logger.info('Cluster nodes ready: launching orchestrator')
         # FIXME Uncomment to call the orchestrator service
-        #requests.put('{}/{}'.format(ORCHESTRATOR_ENDPOINT, clusterid))
-        # FIXME Remove the following line: ready   status will be set by
-        # the orchestrator
-        cluster.status = 'ready'
+        requests.put('{}/{}'.format(ORCHESTRATOR_ENDPOINT, clusterid))
 
     t = threading.Thread(target=orchestrate_when_cluster_is_ready)
     t.daemon = True

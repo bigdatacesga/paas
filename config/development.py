@@ -11,5 +11,5 @@ IGNORE_AUTH = True
 #MESOS_FRAMEWORK_ENDPOINT = 'http://127.0.0.1:5004/bigdata/mesos_framework/v1/clusters'
 #ORCHESTRATOR_ENDPOINT = 'http://127.0.0.1:5001/bigdata/orchestrator/v1/clusters'
 MESOS_FRAMEWORK_ENDPOINT = 'http://framework:5000/bigdata/mesos_framework/v1/clusters'
-ORCHESTRATOR_ENDPOINT = 'http://orchestrator:5005/orchestrator/v1/clusters'
+ORCHESTRATOR_ENDPOINT = 'http://orchestrator:5002/v1/clusters'
 CONSUL_ENDPOINT = 'http://consul:8500/v1/kv'
