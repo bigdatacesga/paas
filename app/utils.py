@@ -76,10 +76,14 @@ def launch_orchestrator_when_ready(clusterdn):
 
     def orchestrate_when_cluster_is_ready():
         # TODO Use a blocking kv query to have inmediate notification
+        app.logger.info('Waiting for cluster nodes to be scheduled')
         while cluster.status != 'scheduled':
             time.sleep(5)
-        app.logger.info('Cluster nodes ready: launching orchestrator')
-        # FIXME Uncomment to call the orchestrator service
+        app.logger.info('All cluster nodes has been scheduled')
+        # Wait so containers can boot
+        app.logger.info('Waiting 5s for containers to boot')
+        time.sleep(5)
+        app.logger.info('Launching orchestrator')
         requests.post('{}/{}'.format(ORCHESTRATOR_ENDPOINT, clusterid))
 
     t = threading.Thread(target=orchestrate_when_cluster_is_ready)
