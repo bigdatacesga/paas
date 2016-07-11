@@ -81,8 +81,8 @@ def launch_orchestrator_when_ready(clusterdn):
             time.sleep(5)
         app.logger.info('All cluster nodes has been scheduled')
         # Wait so containers can boot
-        app.logger.info('Waiting 10s for containers to boot')
-        time.sleep(10)
+        app.logger.info('Waiting 20s for containers to boot')
+        time.sleep(20)
         app.logger.info('Launching orchestrator')
         requests.post('{}/{}'.format(ORCHESTRATOR_ENDPOINT, clusterid))
 
