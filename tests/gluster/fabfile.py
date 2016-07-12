@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Orquestration template
+"""Orchestration template
 
 The following tasks must be implemented:
     - start
@@ -8,10 +8,10 @@ The following tasks must be implemented:
     - restart
     - status
 
-An instance endpoint has to be provided using the INSTANCE environment variable.
+An instance endpoint has to be provided using the CLUSTERDN environment variable.
 For example:
 
-    INSTANCE="instances/test/reference/1.0.0/1"
+    CLUSTERDN="instances/test/reference/1.0.0/1"
 
 A fabric roledef  is created for each service defined in the registry.
 It can be used with the decorator: @roles('servicename1')
@@ -26,10 +26,17 @@ The properties of a given service can be accessed through:
 for example:
 
     SERVICES['namenode'].heap
+    # If the property has dots we can use
+    SERVICES['datanode'].get('dfs.blocksize')
+    # Or even define a default value in case it does not exist
+    SERVICES['datanode'].get('dfs.blocksize', '134217728')
 
 Details about a given node can be obtained through each Node object returned by service.nodes
 
 The fabfile can be tested running it in NOOP mode (testing mode) exporting a NOOP env variable.
+
+Required roles: initiator, responders, peerback
+
 """
 from __future__ import print_function
 import os
@@ -43,10 +50,16 @@ from fabric.contrib.files import exists
 # In the big data nodes configuration-registry is installed globally
 import registry
 
-if os.environ.get('INSTANCE'):
-    INSTANCE = os.environ.get('INSTANCE')
+
+def eprint(*args, **kwargs):
+    """Print to stderr"""
+    print(*args, file=sys.stderr, **kwargs)
+
+
+if os.environ.get('CLUSTERDN'):
+    CLUSTERDN = os.environ.get('CLUSTERDN')
 else:
-    eprint(red('An instance endpoint has to be provided using the INSTANCE environment variable'))
+    eprint(red('An instance endpoint has to be provided using the CLUSTERDN environment variable'))
     sys.exit(2)
 
 if os.environ.get('REGISTRY'):
@@ -56,17 +69,46 @@ else:
 
 # Retrieve info from the registry
 registry.connect(REGISTRY)
-cluster = registry.Cluster(INSTANCE)
+cluster = registry.Cluster(CLUSTERDN)
 nodes = cluster.nodes
 services = cluster.services
+
+
+def get_node_address_for_fabric(node):
+    """Return the network address to be used by fabric to connect to the node
+
+    By convention the address used is the address of its first network interface
+    """
+    return node.networks[0].address
+
 
 # Expose the relevant information
 NODES = {node.name: node for node in nodes}
 SERVICES = {service.name: service for service in services}
+NODE = {}
+for node in nodes:
+    properties = {'hostname': node.name}
+    for dev in node.networks:
+        properties[dev.name] = dev.address
+    for disk in node.disks:
+        properties[disk.name] = disk.destination
+    # The node is labeled with the network address that will be used by fabric
+    # to connect to the node, this allows to retrieve the node using NODE[env.host]
+    label = get_node_address_for_fabric(node)
+    NODE[label] = properties
+print(NODE)
 
 env.user = 'root'
-env.hosts = [n.networks[0].address for n in nodes]
+env.hosts = NODE.keys()
+# Allow known hosts with changed keys
+env.disable_known_hosts = True
+# Retry 30 times each 10 seconds -> (30-1)*10 = 290 seconds
+env.connection_attempts = 30
+env.timeout = 10
+# Enable ssh client keep alive messages
+env.keepalive = 15
 
+# Define the fabric roles according to the cluster services
 for service in services:
     env.roledefs[service.name] = [n.networks[0].address for n in service.nodes]
 
@@ -100,19 +142,20 @@ def start():
     execute(peer_probe_against_initiator)
     execute(create_volumes)
     execute(start_volumes)
-    execute(configure_service1)
-    SERVICES['gluster'].status = 'running'
+    cluster.status = 'running'
     print(green("All services started"))
 
 
 @task
 def configure_service():
     """Configure the GlusterFS filesystems"""
+    generate_etc_hosts()
+
+
+def generate_etc_hosts():
     # Generate /etc/hosts
-    for nodename in NODES:
-        print(nodename)
-        run('echo "{} {}" >> /etc/hosts'.format(
-            NODES[nodename].networks[1].address, nodename))
+    for n in NODE.values():
+        run('echo "{} {}" >> /etc/hosts'.format(n['eth1'], n['hostname']))
 
 
 @task
@@ -120,26 +163,34 @@ def configure_service():
 def peer_probe():
     """Probe for peers step 1"""
     for peer in env.roledefs['responders']:
-        run('gluster peer probe {}'.format(peer))
+        run('gluster peer probe {}'.format(NODE[peer]['hostname']))
 
 
 @task
 @roles('peerback')
 def peer_probe_against_initiator():
     """Probe for peers step 2"""
-    run('gluster peer probe {}'.format(env.roledefs['initiator'][0]))
+    initiator = env.roledefs['initiator'][0]
+    run('gluster peer probe {}'
+        .format(NODE[initiator]['hostname']))
 
 
 @task
 @roles('initiator')
 def create_volumes():
     """Create GlusterFS volumes"""
-    nodes = NODES.keys()
+    run('gluster peer status')
+    # Use eth1 to reference the nodes
+    #nodes = [n['eth1'] for n in NODE.values()]
+    # Use the hostnames to reference the nodes
+    nodes = [n['hostname'] for n in NODE.values()]
+    bricks = [NODE[env.host][b] for b in NODE[env.host] if 'brick' in b]
     layout = ''
     for (node1, node2) in pairwise(nodes):
-        for brick in range(1, 12):
-            layout += '{node1}:/data/{brick}/drv0 {node2}:/data/{brick}/drv0 '.format(
-                node1=node1, node2=node2, brick='brick{}'.format(brick))
+        #for brick in range(1, 12):
+        for brick in bricks:
+            layout += '{node1}:{brick}/drv0 {node2}:{brick}/drv0 '.format(
+                node1=node1, node2=node2, brick=brick)
     run('gluster volume create distributed-replicated-volume-0 '
         'replica 2 transport tcp {}'.format(layout))
 
@@ -199,8 +250,3 @@ def restart():
 def test():
     """Just run some test command"""
     run('uname -a')
-
-
-def eprint(*args, **kwargs):
-    """Print to stderr"""
-    print(*args, file=sys.stderr, **kwargs)
