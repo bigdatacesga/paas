@@ -49,6 +49,8 @@ from fabric.contrib.files import exists
 #from utils import registry
 # In the big data nodes configuration-registry is installed globally
 import registry
+import time
+from pprint import pprint
 
 
 def eprint(*args, **kwargs):
@@ -74,6 +76,14 @@ nodes = cluster.nodes
 services = cluster.services
 
 
+def wait_until_node_is_running(node):
+    """Wait until node is in status running: i.e. docker-executor finished"""
+    name = node.name
+    while not node.status == 'running':
+        print('Waiting for node ', name)
+        time.sleep(5)
+
+
 def get_node_address_for_fabric(node):
     """Return the network address to be used by fabric to connect to the node
 
@@ -87,6 +97,7 @@ NODES = {node.name: node for node in nodes}
 SERVICES = {service.name: service for service in services}
 NODE = {}
 for node in nodes:
+    wait_until_node_is_running(node)
     properties = {'hostname': node.name}
     for dev in node.networks:
         properties[dev.name] = dev.address
@@ -96,7 +107,9 @@ for node in nodes:
     # to connect to the node, this allows to retrieve the node using NODE[env.host]
     label = get_node_address_for_fabric(node)
     NODE[label] = properties
-print(NODE)
+
+# Show cluster information
+pprint(NODE)
 
 env.user = 'root'
 env.hosts = NODE.keys()
