@@ -53,6 +53,12 @@ import time
 from pprint import pprint
 
 
+# Maximum number of retries to wait for a node to change to status running
+MAX_RETRIES = 100
+# Seconds between retries
+DELAY = 5
+
+
 def eprint(*args, **kwargs):
     """Print to stderr"""
     print(*args, file=sys.stderr, **kwargs)
@@ -79,9 +85,12 @@ services = cluster.services
 def wait_until_node_is_running(node):
     """Wait until node is in status running: i.e. docker-executor finished"""
     name = node.name
+    retry = 0
     while not node.status == 'running':
-        print('Waiting for node ', name)
-        time.sleep(5)
+        retry += 1
+        if retry > max_retries: sys.exit(3)
+        print('Waiting for node {}: {}/{}'.format(name, retry, MAX_RETRIES))
+        time.sleep(DELAY)
 
 
 def get_node_address_for_fabric(node):
