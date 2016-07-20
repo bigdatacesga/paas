@@ -6,7 +6,7 @@
       {{ comma() }} "glusternode{{ n }}": {
           "docker_image": "docker-registry.cesga.es:5000/gluster:3.7.11",
           "docker_opts": "--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /root/.ssh/authorized_keys:/root/.ssh/authorized_keys ",
-          "cpu": 4,
+          "cpu": {{ opts['disks'] }},
           "mem": 4096,
           "disks": { {% set comma = joiner(",") %}{% for k in range(0, opts['disks']) %}
               {{ comma() }} "brick{{ k }}": { "destination": "/data/brick{{ k }}" } {% endfor %}

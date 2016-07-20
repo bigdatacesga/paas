@@ -88,7 +88,7 @@ def wait_until_node_is_running(node):
     retry = 0
     while not node.status == 'running':
         retry += 1
-        if retry > max_retries: sys.exit(3)
+        if retry > MAX_RETRIES: sys.exit(3)
         print('Waiting for node {}: {}/{}'.format(name, retry, MAX_RETRIES))
         time.sleep(DELAY)
 
