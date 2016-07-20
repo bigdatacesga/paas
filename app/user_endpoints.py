@@ -205,7 +205,17 @@ def get_cluster_nodes(username, product, version, id):
     app.logger.info('Request for instance nodes of user {} and service {} with '
                     'version {}'.format(username, product, version))
     cluster = registry.get_cluster(username, product, version, id)
-    return jsonify({'nodes': [node.to_dict() for node in cluster.nodes]})
+
+    data = list()
+    nodes = cluster.nodes
+    for node in nodes:
+        d = node.to_dict()
+        d["disks"] = [{"name": disk.name, "host": node.host} for disk in node.disks]
+        d["networks"] = [{"name": network.name, "address": network.address} for network in node.networks]
+        data.append(d)
+
+    return jsonify({'nodes': data})
+    #return jsonify({'nodes': [node.to_dict() for node in cluster.nodes]})
 
 
 @api.route('/clusters/<username>/<product>/<version>/<id>/services', methods=['GET'])
