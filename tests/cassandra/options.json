@@ -1,0 +1,14 @@
+{
+    "required": {
+        "size": 2
+    },
+    "optional": {
+        "disks": 10
+    },
+    "advanced": {
+    },
+    "descriptions": {
+        "size": "Number of nodes",
+        "disks": "Number of disks to allocate per node (minimum 2, maximum 11)"
+    }
+}
