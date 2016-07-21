@@ -162,7 +162,6 @@ Description=Cassandra
 After=network.target
 
 [Service]
-#Type=forking
 PIDFile=/var/lib/cassandra/cassandra.pid
 User=cassandra
 Group=cassandra
@@ -171,6 +170,8 @@ ExecStart=/usr/sbin/cassandra -f -p /var/lib/cassandra/cassandra.pid
 StandardOutput=journal
 StandardError=journal
 LimitNOFILE=infinity
+LimitMEMLOCK=infinity
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
