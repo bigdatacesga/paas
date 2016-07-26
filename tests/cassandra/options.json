@@ -1,14 +1,24 @@
 {
     "required": {
-        "size": 2
+        "size": 3
     },
     "optional": {
-        "disks": 10
+        "disks": 4
     },
     "advanced": {
+        "cpu": 4,
+        "mem": 10240,
+        "max_heap_size": "4G",
+        "initial_heap_size": "4G",
+        "young_generation_size": "200M"
     },
     "descriptions": {
-        "size": "Number of nodes",
+        "size": "Number of nodes (an odd number recommented: 3, 5, ...)",
         "disks": "Number of disks to allocate per node (minimum 2, maximum 11)"
+        "cpu": "Number of CPUs per node",
+        "mem": "Memory per node (GB)",
+        "max_heap_size": "JVM maximum heap size",
+        "initial_heap_size": "JVM initial heap size",
+        "young_generation_size": "JVM young generation size (MB) (recommended 100MB*cpu)"
     }
 }
