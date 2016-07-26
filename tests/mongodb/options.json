@@ -1,0 +1,18 @@
+{
+    "required": {
+        "size": 1
+    },
+    "optional": {
+    },
+    "advanced": {
+        "cpu": 1,
+        "mem": 4096,
+        "disks": 1
+    },
+    "descriptions": {
+        "size": "Number of nodes",
+        "disks": "Number of disks per node (only 1 supported)",
+        "cpu": "Number of CPUs per node",
+        "mem": "Memory per node (GB)"
+    }
+}

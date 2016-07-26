@@ -1,0 +1,25 @@
+{% set comma = joiner(",") %}
+{
+  "dnsname": "{{ clusterid }}",
+  "nodes": {
+      {% for n in range(0, opts['size']) %}
+      {{ comma() }} "mongodbnode{{ n }}": {
+          "docker_image": "docker-registry.cesga.es:5000/mongodb:3.2.8-V1",
+          "docker_opts": "--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro ",
+          "cpu": {{ opts['cpu'] }},
+          "mem": {{ opts['mem'] }},
+          "disks": { {% set comma = joiner(",") %}{% for k in range(0, opts['disks']) %}
+              {{ comma() }} "disk{{ k }}": { "destination": "/data/{{ k }}" } {% endfor %}
+          },
+          "networks": {
+              "eth0": { "type": "dynamic", "networkname": "storage" },
+              "eth1": { "type": "dynamic", "networkname": "admin" }
+          }
+      }
+      {% endfor %}
+  },
+  "services": {
+      "seeds": { "nodes": ["mongodbnode0"] },
+      "others": { "nodes": [{% set comma = joiner(",") %}{% for n in range(1, opts['size']) %}{{ comma() }}"mongodbnode{{ n }}"{% endfor %}] }
+  }
+}
