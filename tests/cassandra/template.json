@@ -23,9 +23,9 @@
       "others": { "nodes": [{% set comma = joiner(",") %}{% for n in range(1, opts['size']) %}{{ comma() }}"cassandranode{{ n }}"{% endfor %}] },
       "cassandra": {
         "nodes": [{% set comma = joiner(",") %}{% for n in range(opts['size']) %}{{ comma() }}"cassandranode{{ n }}"{% endfor %}],
-        "max_heap_size": opts['max_heap_size'],
-        "initial_heap_size": opts['initial_heap_size'],
-        "young_generation_size": opts['young_generation_size']
+        "max_heap_size": "{{ opts['max_heap_size'] }}",
+        "initial_heap_size": "{{ opts['initial_heap_size'] }}",
+        "young_generation_size": "{{ opts['young_generation_size'] }}"
       }
 
   }

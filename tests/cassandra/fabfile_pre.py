@@ -111,12 +111,12 @@ def internal_address(node):
     return node.networks[0].address
 
 
-def put_template(tmpl_string, dest, context=None):
+def put_template(tmpl_string, dest, **kwargs):
     """Upload a template contained in tmpl_string to the dest path
-       The context is passed as p
+       The kwargs are passed as context to the template
     """
     t = jinja2.Template(tmpl_string)
-    rendered = t.render(p=context)
+    rendered = t.render(**kwargs)
     put(StringIO(rendered), dest)
 
 
@@ -241,7 +241,7 @@ def modify_cassandra_yaml():
     p['listen_interface'] = 'eth0'
     p['rpc_interface'] = 'eth1'
 
-    put_template(CASSANDRA_YAML, '/etc/cassandra/conf/cassandra.yaml', context=p)
+    put_template(CASSANDRA_YAML, '/etc/cassandra/conf/cassandra.yaml', p=p)
 
 
 def create_dirs():
@@ -259,9 +259,10 @@ def create_dirs():
 
 def modify_jvm_options():
     """Modify jvm.options configuration file"""
-    max_heap_size = '4G'
-    initial_heap_size = '4G'
-    young_generation_size = '200M'
+    cassandra = SERVICES['cassandra']
+    max_heap_size = cassandra.get('max_heap_size', '4G')
+    initial_heap_size = cassandra.get('initial_heap_size', '4G')
+    young_generation_size = cassandra.get('young_generation_size' ,'200M')
     put_template(JVM_OPTIONS, '/etc/cassandra/conf/jvm.options',
                  max_heap_size=max_heap_size,
                  initial_heap_size=initial_heap_size,

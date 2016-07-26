@@ -14,7 +14,7 @@
     },
     "descriptions": {
         "size": "Number of nodes (an odd number recommented: 3, 5, ...)",
-        "disks": "Number of disks to allocate per node (minimum 2, maximum 11)"
+        "disks": "Number of disks to allocate per node (minimum 2, maximum 11)",
         "cpu": "Number of CPUs per node",
         "mem": "Memory per node (GB)",
         "max_heap_size": "JVM maximum heap size",
