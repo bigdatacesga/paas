@@ -5,7 +5,7 @@
       {% for n in range(0, opts['size']) %}
       {{ comma() }} "cassandranode{{ n }}": {
           "docker_image": "docker-registry.cesga.es:5000/cassandra:3.0.8-1-V1",
-          "docker_opts": "--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /root/.ssh/authorized_keys:/root/.ssh/authorized_keys ",
+          "docker_opts": "--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro ",
           "cpu": {{ opts['cpu'] }},
           "mem": {{ opts['mem'] }},
           "disks": { {% set comma = joiner(",") %}{% for k in range(0, opts['disks']) %}
