@@ -5,6 +5,7 @@ http POST http://paas:6000/bigdata/api/v1/products name=mongodb version=3.2.8 de
 curl -X PUT http://paas:6000/bigdata/api/v1/products/mongodb/3.2.8/template --data-binary @template.json -H "Content-type: application/json" -H "$AUTH"
 curl -X PUT http://paas:6000/bigdata/api/v1/products/mongodb/3.2.8/options --data-binary @options.json -H "$AUTH"
 curl -X PUT http://paas:6000/bigdata/api/v1/products/mongodb/3.2.8/orchestrator --data-binary @fabfile.py -H "$AUTH"
+http PUT http://paas:6000/bigdata/api/v1/products/mongodb/3.2.8/image_url image_url='http://hadoop.cesga.es/img/mongodb-for-giant-ideas-bbab5c3cf8.png' x-auth-token:$TOKEN
 
 # Launching
 # http POST http://paas:6000/bigdata/api/v1/products/mongodb/3.2.8 size:=2 x-auth-token:$TOKEN
