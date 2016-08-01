@@ -20,12 +20,14 @@ def register_product():
     """Register a new product"""
     if request.is_json:
         data = request.get_json()
-        if utils.validate(data, required_fields=('name', 'version', 'description')):
+        required_fields = ('name', 'version', 'description', 'logo_url')
+        if utils.validate(data, required_fields=required_fields):
             name = data['name']
             version = data['version']
             description = data['description']
-            registry.register(name, version, description)
-            location = url_for('api.get_product', product=name, version=version,
+            logo_url = data['logo_url']
+            registry.register(name, version, description, logo_url=logo_url)
+            location = url_for('api.get_product', name=name, version=version,
                                _external=True)
             return '', 201, {'Location': location}
     abort(400)
@@ -116,25 +118,25 @@ def set_product_orchestrator(name, version):
     return '', 204
 
 
-@api.route('/products/<name>/<version>/image_url', methods=['GET'])
+@api.route('/products/<name>/<version>/logo_url', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_product_image_url(name, version):
-    """Get the product image url"""
+def get_product_logo_url(name, version):
+    """Get the product logo url"""
     product = registry.get_product(name, version)
-    image_url = product.image_url
-    return jsonify(image_url)
+    logo_url = product.logo_url
+    return jsonify(logo_url)
 
 
-@api.route('/products/<name>/<version>/image_url', methods=['PUT'])
+@api.route('/products/<name>/<version>/logo_url', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_product_image_url(name, version):
-    """Set the product image url"""
+def set_product_logo_url(name, version):
+    """Set the product logo url"""
     if request.is_json:
         data = request.get_json()
-        if utils.validate(data, required_fields=['image_url']):
-            image_url = data['image_url']
+        if utils.validate(data, required_fields=['logo_url']):
+            logo_url = data['logo_url']
             product = registry.get_product(name, version)
-            product.image_url = image_url
+            product.logo_url = logo_url
             return '', 204
     abort(400)
 
