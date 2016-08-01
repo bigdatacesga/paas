@@ -13,7 +13,7 @@ app.config.from_pyfile(cfg)
 # Create a blueprint
 api = Blueprint('api', __name__)
 # Import the endpoints belonging to this blueprint
-from . import user_endpoints
+from . import endpoints
 from . import errors
 
 # register blueprints
