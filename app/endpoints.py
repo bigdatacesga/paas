@@ -24,7 +24,7 @@ def register_product():
             name = data['name']
             version = data['version']
             description = data['description']
-            product = registry.register(name, version, description)
+            registry.register(name, version, description)
             location = url_for('api.get_product', product=name, version=version,
                                _external=True)
             return '', 201, {'Location': location}
@@ -39,81 +39,104 @@ def get_products():
     return jsonify({'products': list(set([p.name for p in products]))})
 
 
-@api.route('/products/<product>', methods=['GET'])
-def get_product_versions(product):
+@api.route('/products/<name>', methods=['GET'])
+def get_product_versions(name):
     """Get the available versions of a produt"""
-    products = registry.query_products(product=product)
+    products = registry.query_products(product=name)
     return jsonify({'versions': [p.version for p in products]})
 
 
-@api.route('/products/<product>/<version>', methods=['GET'])
+@api.route('/products/<name>/<version>', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_product(product, version):
+def get_product(name, version):
     """Get info about a specific version of a product"""
-    product = registry.get_product(product, version)
+    product = registry.get_product(name, version)
     return jsonify(product.to_dict())
 
 
-@api.route('/products/<product>/<version>/template', methods=['GET'])
+@api.route('/products/<name>/<version>/template', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_product_template(product, version):
+def get_product_template(name, version):
     """Get the template used to generate the resources needed by a product"""
-    product = registry.get_product(product, version)
+    product = registry.get_product(name, version)
     template = product.template
     return jsonify(template)
 
 
-@api.route('/products/<product>/<version>/template', methods=['PUT'])
+@api.route('/products/<name>/<version>/template', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_product_template(product, version):
+def set_product_template(name, version):
     """Set the template needed to generate the required product resources"""
     if request.headers['Content-Type'] == 'application/json':
         templatetype = 'json+jinja2'
     elif request.headers['Content-Type'] == 'application/yaml':
         templatetype = 'yaml+jinja2'
     data = request.get_data().decode('utf-8')
-    template = registry.get_product(product, version)
-    template.template = data
-    template.templatetype = templatetype
+    product = registry.get_product(name, version)
+    product.template = data
+    product.templatetype = templatetype
     return '', 204
 
 
-@api.route('/products/<product>/<version>/options', methods=['GET'])
+@api.route('/products/<name>/<version>/options', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_product_options(product, version):
+def get_product_options(name, version):
     """Get the options needed by the product template"""
-    product = registry.get_product(product, version)
+    product = registry.get_product(name, version)
     options = json.loads(product.options)
     return jsonify(options)
 
 
-@api.route('/products/<product>/<version>/options', methods=['PUT'])
+@api.route('/products/<name>/<version>/options', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_product_options(product, version):
+def set_product_options(name, version):
     """Set the options needed by the product template"""
     data = request.get_data().decode('utf-8')
-    template = registry.get_product(product, version)
-    template.options = data
+    product = registry.get_product(name, version)
+    product.options = data
     return '', 204
 
 
-@api.route('/products/<product>/<version>/orchestrator', methods=['GET'])
+@api.route('/products/<name>/<version>/orchestrator', methods=['GET'])
 @restricted(role='ROLE_USER')
-def get_product_orchestrator(product, version):
+def get_product_orchestrator(name, version):
     """Get the orchestrator needed to start the product once instantiated"""
-    product = registry.get_product(product, version)
+    product = registry.get_product(name, version)
     orchestrator = product.orchestrator
     return jsonify(orchestrator)
 
 
-@api.route('/products/<product>/<version>/orchestrator', methods=['PUT'])
+@api.route('/products/<name>/<version>/orchestrator', methods=['PUT'])
 @restricted(role='ROLE_USER')
-def set_product_orchestrator(product, version):
+def set_product_orchestrator(name, version):
     """Set the orchestrator needed to start the product once instantiated"""
     data = request.get_data().decode('utf-8')
-    template = registry.get_product(product, version)
-    template.orchestrator = data
+    product = registry.get_product(name, version)
+    product.orchestrator = data
     return '', 204
+
+
+@api.route('/products/<name>/<version>/image_url', methods=['GET'])
+@restricted(role='ROLE_USER')
+def get_product_image_url(name, version):
+    """Get the product image url"""
+    product = registry.get_product(name, version)
+    image_url = product.image_url
+    return jsonify(image_url)
+
+
+@api.route('/products/<name>/<version>/image_url', methods=['PUT'])
+@restricted(role='ROLE_USER')
+def set_product_image_url(name, version):
+    """Set the product image url"""
+    if request.is_json:
+        data = request.get_json()
+        if utils.validate(data, required_fields=['image_url']):
+            image_url = data['image_url']
+            product = registry.get_product(name, version)
+            product.image_url = image_url
+            return '', 204
+    abort(400)
 
 
 @api.route('/products/<product>/<version>', methods=['POST'])
